@@ -64,8 +64,8 @@ fn setup(
 
 
     // stone
-    let radius = 0.25;
-    let height = 0.2;
+    let radius = 0.3;
+    let height = 0.15;
     let weight = 20.0;
 
     commands.spawn((
@@ -77,7 +77,7 @@ fn setup(
 
         //AngularVelocity(Vec3::new(2.5, 3.5, 1.5)),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
-        Mesh3d(meshes.add(Cylinder::new(0.5, 0.3))),
+        Mesh3d(meshes.add(Cylinder::new(radius, height))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, 0.5, 0.0),
     ));
@@ -94,7 +94,7 @@ fn setup(
     // Camera
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(20.0, 6.0, 10.0).looking_at(Vec3::new(0.0, 3.0, 0.0), Dir3::Y),
+        Transform::from_xyz(0.0, 6.0, 10.0).looking_at(Vec3::new(0.0, 3.0, 0.0), Dir3::Y),
         TrackingCamera
     ));
 }
@@ -111,11 +111,18 @@ fn cam_track(
     let mut camera = camera.single_mut();
 
     let dist = stone_pos.translation.distance(camera.translation);
-    if dist > 6.0 {
+    if stone_pos.translation.z > -5.0 && dist >5.0  {
         let move_amount = camera.forward();
-        camera.translation += move_amount * 10.0 * dt;
+        camera.translation += move_amount * 5.0 * dt;
         camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
+    } else {
+
+        let move_amount = 25.0;//camera.forward() * 10.0;
+        camera.translation.y = 10.0;
+    camera.translation.z = stone_pos.translation.z - move_amount ;//* 10.0 * dt;
+        camera.look_at(stone_pos.translation + Vec3::new(0.0, 0.3, -10.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
     }
+
 
 }
 
