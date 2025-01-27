@@ -45,10 +45,9 @@ fn main() {
                 }),
                 ..default()
             }),
-            // You need to add this plugin to enable wireframe rendering
-            //WireframePlugin,
+            WireframePlugin,
             MeshPickingPlugin            ,
-            PhysicsDebugPlugin::default(),
+//            PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
@@ -167,7 +166,7 @@ fn cam_track(
 
         //let move_amount = camera.forward();
         //camera.translation += move_amount * 5.0 * dt;
-        //camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
+        camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
     } else {
 
         let move_amount = 25.0;//camera.forward() * 10.0;
@@ -181,14 +180,21 @@ fn cam_track(
 
 fn stone_shoot(
     input: Res<ButtonInput<KeyCode>>,
-    mut vel: Query<&mut LinearVelocity, With<Stone>>,
+    mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
     mesh_query: Query<(Entity, &Mesh3d), With<CustomMesh>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ){
-    let mut vel_vec = vel.single_mut();
+    let (mut stone_pos, mut vel_vec) = stone.single_mut();
     if input.pressed(KeyCode::KeyW) {
         vel_vec.z = -5.0;
+    }
+
+    if stone_pos.translation.distance(Vec3::ZERO) > 64.0 {
+        stone_pos.translation = Vec3::new(0.0, 0.5, 0.0);
+        vel_vec.x = 0.0;
+        vel_vec.y = 0.0;
+        vel_vec.z = 0.0;
     }
 
     if input.just_pressed(KeyCode::Space) {
@@ -270,14 +276,24 @@ fn toggle_texture(mesh_to_change: &mut Mesh) {
     let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
     let r1 = (SUBS + 2) as usize;
 
-
     vert_pos[v][1] -= 1.0;
     if v > 0 { vert_pos[v-1][1] -= 0.5; }
     vert_pos[v+1][1] -= 0.5;
     if v > r1 { vert_pos[v-r1][1] -= 0.5; }
     vert_pos[v+r1][1] -= 0.5;
 
-   // let mut idx = 0;
+
+    let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
+    let r1 = (SUBS + 2) as usize;
+
+    vert_pos[v][1] += 1.0;
+    if v > 0 { vert_pos[v-1][1] += 0.5; }
+    vert_pos[v+1][1] += 0.5;
+    if v > r1 { vert_pos[v-r1][1] += 0.5; }
+    vert_pos[v+r1][1] += 0.5;
+
+
+    // let mut idx = 0;
     //for pos in vert_pos.iter_mut() {
 //        pos[1] += rng.gen_range(-0.5..0.5);
     //    idx += 1;
