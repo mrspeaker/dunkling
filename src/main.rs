@@ -41,7 +41,8 @@ fn main() {
                 ..default()
             }),
             // You need to add this plugin to enable wireframe rendering
-            WireframePlugin,
+            //WireframePlugin,
+            PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
