@@ -14,6 +14,7 @@ use bevy::{
     },
 };
 
+use rand::prelude::*;
 use std::f32::consts::*;
 
 #[derive(Component)]
@@ -72,12 +73,14 @@ fn setup(
 
     let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
-        Mesh3d(cube_mesh_handle),
+        //Mesh3d(cube_mesh_handle),
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(length, length).subdivisions(20))),
         RigidBody::Static,
-        Friction::new(0.05),
+        //Friction::new(0.05),
         //Collider::cuboid(width, 0.3, length),
         //ColliderConstructor::ConvexHullFromMesh,
         ColliderConstructor::TrimeshFromMesh,
+        CollisionMargin(0.05),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
         Wireframe,
@@ -94,7 +97,7 @@ fn setup(
         Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
     ));
 */
-/*    // jump
+    // jump
     commands.spawn((
         RigidBody::Static,
         Friction::new(0.05),
@@ -104,7 +107,7 @@ fn setup(
         Transform::from_xyz(-width/2.0, 0.0, -10.0)
             .with_rotation(Quat::from_rotation_x(PI / 8.)),
         BobX{ dt: 0.0 }
-    ));*/
+    ));
 
 
     // stone
@@ -114,11 +117,13 @@ fn setup(
     commands.spawn((
         Stone,
         RigidBody::Dynamic,
-        Collider::cylinder(radius, height),
+        //Collider::cylinder(radius, height),
+        Collider::sphere(radius),
         Friction::new(0.05),
         Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
-        Mesh3d(meshes.add(Cylinder::new(radius, height))),
+        //Mesh3d(meshes.add(Cylinder::new(radius, height))),
+        Mesh3d(meshes.add(Sphere::new(radius))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, 0.5, 0.0),
     ));
@@ -254,10 +259,9 @@ fn toggle_texture(mesh_to_change: &mut Mesh) {
     };
 
     let mut idx = 0;
+    let mut rng = rand::thread_rng();
     for pos in vert_pos.iter_mut() {
-        if idx == 2 {
-            pos[1] -= 1.0;
-        }
+        pos[1] += rng.gen_range(-0.5..0.5);
         idx += 1;
     }
 }
