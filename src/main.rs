@@ -1,5 +1,18 @@
 use avian3d::prelude::*;
-use bevy::prelude::*;
+
+use bevy::{
+    prelude::*,
+    color::palettes::css::*,
+    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+    render::{
+        mesh::{Indices, VertexAttributeValues},
+        render_asset::RenderAssetUsages,
+        render_resource::PrimitiveTopology,
+        render_resource::WgpuFeatures,
+        settings::{RenderCreation, WgpuSettings},
+        RenderPlugin,
+    },
+};
 
 use std::f32::consts::*;
 
@@ -14,10 +27,26 @@ struct BobX {
     dt: f32
 }
 
+#[derive(Component)]
+struct CustomMesh;
+
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, PhysicsPlugins::default()))
-        .add_systems(Startup, setup)
+        .add_plugins((
+            DefaultPlugins.set(RenderPlugin {
+                render_creation: RenderCreation::Automatic(WgpuSettings {
+                    features: WgpuFeatures::POLYGON_MODE_LINE,
+                    ..default()
+                }),
+                ..default()
+            }),
+            // You need to add this plugin to enable wireframe rendering
+            WireframePlugin,
+            PhysicsPlugins::default()))
+        .insert_resource(WireframeConfig {
+            global: false,
+            default_color: WHITE.into(),
+        })        .add_systems(Startup, setup)
         .add_systems(Update, (cam_track, stone_shoot, bob))
         .run();
 }
@@ -40,8 +69,22 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
-    // sheet
+    let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
+        Mesh3d(cube_mesh_handle),
+        RigidBody::Static,
+        Friction::new(0.05),
+        //Collider::cuboid(width, 0.3, length),
+        //ColliderConstructor::ConvexHullFromMesh,
+        ColliderConstructor::TrimeshFromMesh,
+        MeshMaterial3d(materials.add(Color::WHITE)),
+        Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
+        Wireframe,
+        CustomMesh
+    ));
+
+    // sheet
+/*    commands.spawn((
         RigidBody::Static,
         Friction::new(0.05),
         Collider::cuboid(width, 0.3, length),
@@ -49,8 +92,8 @@ fn setup(
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
     ));
-
-    // jump
+*/
+/*    // jump
     commands.spawn((
         RigidBody::Static,
         Friction::new(0.05),
@@ -60,22 +103,19 @@ fn setup(
         Transform::from_xyz(-width/2.0, 0.0, -10.0)
             .with_rotation(Quat::from_rotation_x(PI / 8.)),
         BobX{ dt: 0.0 }
-    ));
+    ));*/
 
 
     // stone
     let radius = 0.3;
     let height = 0.15;
     let weight = 20.0;
-
     commands.spawn((
         Stone,
         RigidBody::Dynamic,
         Collider::cylinder(radius, height),
         Friction::new(0.05),
         Mass(weight),
-
-        //AngularVelocity(Vec3::new(2.5, 3.5, 1.5)),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Cylinder::new(radius, height))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
@@ -129,11 +169,23 @@ fn cam_track(
 fn stone_shoot(
     input: Res<ButtonInput<KeyCode>>,
     mut vel: Query<&mut LinearVelocity, With<Stone>>,
+    mesh_query: Query<(Entity, &Mesh3d), With<CustomMesh>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands,
 ){
     let mut vel_vec = vel.single_mut();
     if input.pressed(KeyCode::KeyW) {
         vel_vec.z = -8.0;
     }
+
+    if input.just_pressed(KeyCode::Space) {
+        let (e, mesh_handle) = mesh_query.get_single().expect("Query not successful");
+        let mesh = meshes.get_mut(mesh_handle).unwrap();
+        toggle_texture(mesh);
+        commands.entity(e).remove::<Collider>();
+        commands.entity(e).insert(ColliderConstructor::TrimeshFromMesh);
+    }
+
 }
 
 fn bob(
@@ -146,5 +198,65 @@ fn bob(
     let move_amount = t.right() * b.dt.sin() * 10.0;
         t.translation += move_amount * dt;
         b.dt += dt * 4.0;
+    }
+}
+
+#[rustfmt::skip]
+fn create_plane_mesh() -> Mesh {
+    let w = 5.0 / 2.0;
+    let h = 50.0 / 2.0;
+
+    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [-w, 0.0, -h],
+            [w, 0.0, -h],
+            [w, 0.0, h],
+            [-w, 0.0, h],
+
+            [w+w*2.0, 0.0, -h],
+            [w+w*2.0, 0.0, h],
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_UV_0,
+        vec![
+            [0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0],
+            [0.0, 1.0], [0.0, 0.0],
+        ],
+    )
+    .with_inserted_attribute(
+        Mesh::ATTRIBUTE_NORMAL,
+        vec![
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+
+            [0.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+        ],
+    )
+    .with_inserted_indices(Indices::U32(vec![
+        0,3,1, 1,3,2, // triangles making up the top (+y) facing side.
+        1,2,4, 4,2,5
+    ]))
+
+}
+
+fn toggle_texture(mesh_to_change: &mut Mesh) {
+    let uv_attribute = mesh_to_change.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+
+    let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+        panic!("Unexpected vertex format, expected Float32x3.");
+    };
+
+    let mut idx = 0;
+    for pos in vert_pos.iter_mut() {
+        if idx == 2 {
+            pos[1] -= 1.0;
+        }
+        idx += 1;
     }
 }
