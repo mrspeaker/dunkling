@@ -3,6 +3,7 @@ use avian3d::prelude::*;
 use bevy::{
     prelude::*,
     color::palettes::css::*,
+    color::palettes::tailwind::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
         mesh::{Indices, VertexAttributeValues},
@@ -12,6 +13,7 @@ use bevy::{
         settings::{RenderCreation, WgpuSettings},
         RenderPlugin,
     },
+    picking::pointer::PointerInteraction,
 };
 
 use rand::prelude::*;
@@ -31,6 +33,8 @@ struct BobX {
 #[derive(Component)]
 struct CustomMesh;
 
+const SUBS: u32 = 30;
+
 fn main() {
     App::new()
         .add_plugins((
@@ -43,13 +47,14 @@ fn main() {
             }),
             // You need to add this plugin to enable wireframe rendering
             //WireframePlugin,
+            MeshPickingPlugin            ,
             PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
             default_color: WHITE.into(),
         })        .add_systems(Startup, setup)
-        .add_systems(Update, (cam_track, stone_shoot, bob))
+        .add_systems(Update, (cam_track, stone_shoot, bob, draw_mesh_intersections))
         .run();
 }
 
@@ -74,15 +79,15 @@ fn setup(
     let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         //Mesh3d(cube_mesh_handle),
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(length, length).subdivisions(20))),
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(length, length).subdivisions(SUBS))),
         RigidBody::Static,
-        //Friction::new(0.05),
+        Friction::new(10.0),
         //Collider::cuboid(width, 0.3, length),
         //ColliderConstructor::ConvexHullFromMesh,
         ColliderConstructor::TrimeshFromMesh,
         CollisionMargin(0.05),
         MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
+        Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ).with_rotation(Quat::from_rotation_y(PI / 4.001)),
         Wireframe,
         CustomMesh
     ));
@@ -100,7 +105,7 @@ fn setup(
     // jump
     commands.spawn((
         RigidBody::Static,
-        Friction::new(0.05),
+//        Friction::new(100.0),
         Collider::cuboid(width * 0.6, 0.3, 2.0),
         Mesh3d(meshes.add(Cuboid::new(width * 0.6, 0.3, 2.0))),
         MeshMaterial3d(materials.add(Color::BLACK)),
@@ -119,7 +124,8 @@ fn setup(
         RigidBody::Dynamic,
         //Collider::cylinder(radius, height),
         Collider::sphere(radius),
-        Friction::new(0.05),
+        //LinearDamping(0.8),
+        //Friction::new(10.0),
         Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
         //Mesh3d(meshes.add(Cylinder::new(radius, height))),
@@ -158,9 +164,10 @@ fn cam_track(
 
     let dist = stone_pos.translation.distance(camera.translation);
     if stone_pos.translation.z > -5.0 && dist >5.0  {
-        let move_amount = camera.forward();
-        camera.translation += move_amount * 5.0 * dt;
-        camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
+
+        //let move_amount = camera.forward();
+        //camera.translation += move_amount * 5.0 * dt;
+        //camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
     } else {
 
         let move_amount = 25.0;//camera.forward() * 10.0;
@@ -181,7 +188,7 @@ fn stone_shoot(
 ){
     let mut vel_vec = vel.single_mut();
     if input.pressed(KeyCode::KeyW) {
-        vel_vec.z = -8.0;
+        vel_vec.z = -5.0;
     }
 
     if input.just_pressed(KeyCode::Space) {
@@ -258,10 +265,33 @@ fn toggle_texture(mesh_to_change: &mut Mesh) {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
-    let mut idx = 0;
+
     let mut rng = rand::thread_rng();
-    for pos in vert_pos.iter_mut() {
-        pos[1] += rng.gen_range(-0.5..0.5);
-        idx += 1;
+    let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
+    let r1 = (SUBS + 2) as usize;
+
+
+    vert_pos[v][1] -= 1.0;
+    if v > 0 { vert_pos[v-1][1] -= 0.5; }
+    vert_pos[v+1][1] -= 0.5;
+    if v > r1 { vert_pos[v-r1][1] -= 0.5; }
+    vert_pos[v+r1][1] -= 0.5;
+
+   // let mut idx = 0;
+    //for pos in vert_pos.iter_mut() {
+//        pos[1] += rng.gen_range(-0.5..0.5);
+    //    idx += 1;
+    //}
+}
+
+
+fn draw_mesh_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gizmos) {
+    for (point, normal) in pointers
+        .iter()
+        .filter_map(|interaction| interaction.get_nearest_hit())
+        .filter_map(|(_entity, hit)| hit.position.zip(hit.normal))
+    {
+        gizmos.sphere(point, 0.05, RED_500);
+        gizmos.arrow(point, point + normal.normalize() * 0.5, PINK_100);
     }
 }
