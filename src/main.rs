@@ -26,6 +26,9 @@ struct TrackingCamera;
 struct Stone;
 
 #[derive(Component)]
+struct Spotty;
+
+#[derive(Component)]
 struct BobX {
     dt: f32
 }
@@ -51,7 +54,7 @@ fn main() {
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
-            default_color: WHITE.into(),
+            default_color: DARK_SEA_GREEN.into(),
         })        .add_systems(Startup, setup)
         .add_systems(Update, (cam_track, stone_shoot, bob, draw_mesh_intersections))
         .run();
@@ -86,7 +89,11 @@ fn setup(
         ColliderConstructor::TrimeshFromMesh,
         CollisionMargin(0.05),
         MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ).with_rotation(Quat::from_rotation_y(PI / 4.001)),
+        Transform::from_xyz(
+            0.0,
+            0.0,
+            -length / 2.0 + (pre_area / 2.0) )
+            .with_rotation(Quat::from_rotation_y(PI / 4.001)),
         Wireframe,
         CustomMesh
     ));
@@ -140,6 +147,7 @@ fn setup(
             ..default()
         },
         Transform::from_xyz(4.0, 8.0, 4.0),
+        Spotty
     ));
 
     // Camera
@@ -181,6 +189,7 @@ fn cam_track(
 fn stone_shoot(
     input: Res<ButtonInput<KeyCode>>,
     mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
+    mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
     mesh_query: Query<(Entity, &Mesh3d), With<CustomMesh>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
@@ -189,6 +198,9 @@ fn stone_shoot(
     if input.pressed(KeyCode::KeyW) {
         vel_vec.z = -5.0;
     }
+
+    let mut spot_pos = spotty.single_mut();
+    spot_pos.translation = stone_pos.translation + Vec3::new(0.0, 11.0, -5.0);
 
     if stone_pos.translation.distance(Vec3::ZERO) > 64.0 {
         stone_pos.translation = Vec3::new(0.0, 0.5, 0.0);
