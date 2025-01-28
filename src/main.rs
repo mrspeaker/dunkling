@@ -19,6 +19,11 @@ use bevy::{
 use rand::prelude::*;
 use std::f32::consts::*;
 
+const STONE_RADIUS: f32 = 10.0;
+const STONE_DAMPENING: f32 = 0.15;
+const SUBS: u32 = 50;
+const MAX_DIST: f32 = STONE_RADIUS * 100.0;
+
 #[derive(Component)]
 struct TrackingCamera;
 
@@ -36,8 +41,6 @@ struct BobX {
 #[derive(Component)]
 struct CustomMesh;
 
-const SUBS: u32 = 30;
-
 fn main() {
     App::new()
         .add_plugins((
@@ -54,7 +57,7 @@ fn main() {
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
-            default_color: BLACK.into(),
+            default_color: DARK_SLATE_GRAY.into(),
         })        .add_systems(Startup, setup)
         .add_systems(Update, (cam_track, stone_shoot, bob, draw_mesh_intersections))
         .run();
@@ -68,10 +71,9 @@ fn setup(
 ) {
 
     // sheet
-    let width = 5.0;
-    let length = 50.0;
-    let pre_area = 5.0;
-    let post_area = 10.0;
+    let width = 800.0;
+    let length = 800.0;
+    let pre_area = 50.0;
 
     // start line
     commands.spawn((
@@ -90,7 +92,7 @@ fn setup(
         //ColliderConstructor::ConvexHullFromMesh,
         ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(Color::WHITE)),
+        MeshMaterial3d(materials.add(Color::linear_rgb(0.2,0.4, 0.))),
         Transform::from_xyz(
             0.0,
             0.0,
@@ -124,23 +126,18 @@ fn setup(
 
 
     // stone
-    let radius = 0.3;
-    let height = 0.15;
-    let weight = 20.0;
     commands.spawn((
         Stone,
         RigidBody::Dynamic,
-        //Collider::cylinder(radius, height),
-        Collider::sphere(radius),
-        LinearDamping(0.3),
+        Collider::sphere(STONE_RADIUS),
+        LinearDamping(STONE_DAMPENING),
         //Friction::new(10.0),
         //CollisionMargin(0.1),
-        Mass(weight),
+        //Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
-        //Mesh3d(meshes.add(Cylinder::new(radius, height))),
-        Mesh3d(meshes.add(Sphere::new(radius))),
+        Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(0.0, 0.5, 0.0),
+        Transform::from_xyz(0.0, STONE_RADIUS * 2.0, 0.0),
     ));
 
     // Light
@@ -157,13 +154,14 @@ fn setup(
     // Camera
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 6.0, 10.0).looking_at(Vec3::new(0.0, 3.0, 0.0), Dir3::Y),
+        Transform::from_xyz(0.0, STONE_RADIUS * 4.0, STONE_RADIUS * 10.0)
+            .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
         TrackingCamera
     ));
 
     let texture_handle = asset_server.load("thor.png");
     let aspect = 1.0;//0.25;
-    let quad_width = 10.0;
+    let quad_width = STONE_RADIUS * 10.0;
     let quad_handle = meshes.add(Rectangle::new(quad_width, quad_width * aspect));
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
@@ -176,7 +174,7 @@ fn setup(
     commands.spawn((
         Mesh3d(quad_handle.clone()),
         MeshMaterial3d(material_handle),
-        Transform::from_xyz(3.0, 1.0, 5.0)
+        Transform::from_xyz(STONE_RADIUS * 2.0, 1.0, STONE_RADIUS * 3.0)
             .with_rotation(Quat::from_euler(
                 // YXZ order corresponds to the common
                 // "yaw"/"pitch"/"roll" convention
@@ -241,17 +239,21 @@ fn cam_track(
     let mut camera = camera.single_mut();
 
     let dist = stone_pos.translation.distance(camera.translation);
-    if stone_pos.translation.z > -5.0 && dist >5.0  {
+    if stone_pos.translation.z > -5.0 && dist > STONE_RADIUS * 3.0  {
 
         //let move_amount = camera.forward();
         //camera.translation += move_amount * 5.0 * dt;
-        camera.look_at(stone_pos.translation + Vec3::new(0.0, 1.0, 1.0), Dir3::Y);
+        camera.look_at(
+            stone_pos.translation +
+                Vec3::new(0.0, STONE_RADIUS * 2.0, STONE_RADIUS * 3.0)
+                , Dir3::Y);
     } else {
 
-        let move_amount = 25.0;//camera.forward() * 10.0;
-        camera.translation.y = 10.0;
-    camera.translation.z = stone_pos.translation.z - move_amount ;//* 10.0 * dt;
-        camera.look_at(stone_pos.translation + Vec3::new(0.0, 0.3, -10.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
+        let move_amount = STONE_RADIUS * 40.0; //camera.forward() * 10.0;
+        camera.translation.y = STONE_RADIUS * 9.0;
+        camera.translation.z = stone_pos.translation.z - move_amount ;//* 10.0 * dt;
+        camera.look_at(stone_pos.translation
+                       + Vec3::new(0.0, 0.0, -STONE_RADIUS * 20.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
     }
 
 
@@ -272,7 +274,7 @@ fn stone_shoot(
     }
     if input.pressed(KeyCode::KeyS) {
         vel_vec.z -= power;
-    }
+    }// STONE_RADIUS * 1.5;
     if input.pressed(KeyCode::KeyA) {
         vel_vec.x += power;
     }
@@ -283,8 +285,8 @@ fn stone_shoot(
     let mut spot_pos = spotty.single_mut();
     spot_pos.translation = stone_pos.translation + Vec3::new(1.0, 5.0, 1.0);
 
-    if stone_pos.translation.distance(Vec3::ZERO) > 64.0 {
-        stone_pos.translation = Vec3::new(0.0, 0.5, 0.0);
+    if stone_pos.translation.distance(Vec3::ZERO) > MAX_DIST {
+        stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 0.0);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;
         vel_vec.z = 0.0;
@@ -369,21 +371,23 @@ fn toggle_texture(mesh_to_change: &mut Mesh) {
     let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
     let r1 = (SUBS + 2) as usize;
 
-    vert_pos[v][1] -= 1.0;
-    if v > 0 { vert_pos[v-1][1] -= 0.5; }
-    vert_pos[v+1][1] -= 0.5;
-    if v > r1 { vert_pos[v-r1][1] -= 0.5; }
-    vert_pos[v+r1][1] -= 0.5;
+    let amount = STONE_RADIUS * 1.0;
+
+    vert_pos[v][1] -= amount;
+    if v > 0 { vert_pos[v-1][1] -= amount / 2.0; }
+    vert_pos[v+1][1] -= amount / 2.0;
+    if v > r1 { vert_pos[v-r1][1] -= amount / 2.0; }
+    vert_pos[v+r1][1] -= amount / 2.0;
 
 
     let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
     let r1 = (SUBS + 2) as usize;
 
-    vert_pos[v][1] += 1.0;
-    if v > 0 { vert_pos[v-1][1] += 0.5; }
-    vert_pos[v+1][1] += 0.5;
-    if v > r1 { vert_pos[v-r1][1] += 0.5; }
-    vert_pos[v+r1][1] += 0.5;
+    vert_pos[v][1] += amount;
+    if v > 0 { vert_pos[v-1][1] += amount / 2.0; }
+    vert_pos[v+1][1] += amount / 2.0;
+    if v > r1 { vert_pos[v-r1][1] += amount / 2.0; }
+    vert_pos[v+r1][1] += amount / 2.0;
 
 
     // let mut idx = 0;
