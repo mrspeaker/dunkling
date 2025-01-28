@@ -54,7 +54,7 @@ fn main() {
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
-            default_color: DARK_SEA_GREEN.into(),
+            default_color: BLACK.into(),
         })        .add_systems(Startup, setup)
         .add_systems(Update, (cam_track, stone_shoot, bob, draw_mesh_intersections))
         .run();
@@ -64,6 +64,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
 
     // sheet
@@ -74,7 +75,7 @@ fn setup(
 
     // start line
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(width-0.01, 0.45, 0.2))),
+        Mesh3d(meshes.add(Cuboid::new(width-0.01, 0.1, 0.2))),
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
@@ -131,7 +132,7 @@ fn setup(
         RigidBody::Dynamic,
         //Collider::cylinder(radius, height),
         Collider::sphere(radius),
-        //LinearDamping(0.8),
+        LinearDamping(0.3),
         //Friction::new(10.0),
         //CollisionMargin(0.1),
         Mass(weight),
@@ -145,10 +146,11 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
+            intensity: 100_000.0,
+            color: WHITE.into(),
             shadows_enabled: true,
             ..default()
         },
-        Transform::from_xyz(4.0, 8.0, 4.0),
         Spotty
     ));
 
@@ -158,6 +160,52 @@ fn setup(
         Transform::from_xyz(0.0, 6.0, 10.0).looking_at(Vec3::new(0.0, 3.0, 0.0), Dir3::Y),
         TrackingCamera
     ));
+
+    let texture_handle = asset_server.load("thor.png");
+    let aspect = 1.0;//0.25;
+    let quad_width = 10.0;
+    let quad_handle = meshes.add(Rectangle::new(quad_width, quad_width * aspect));
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(texture_handle.clone()),
+        double_sided: true,
+        cull_mode: None,//Some(Face::Back)
+        alpha_mode: AlphaMode::Blend,
+        unlit: true,
+        ..default()
+    });
+    commands.spawn((
+        Mesh3d(quad_handle.clone()),
+        MeshMaterial3d(material_handle),
+        Transform::from_xyz(3.0, 1.0, 5.0)
+            .with_rotation(Quat::from_euler(
+                // YXZ order corresponds to the common
+                // "yaw"/"pitch"/"roll" convention
+                EulerRot::YXZ,
+                (180.0_f32).to_radians(),
+                (0.0_f32).to_radians(),
+                (0.0_f32).to_radians(),
+            )),
+        //Quat::from_rotation_y(PI/2.0)
+    ));
+
+    commands.insert_resource(AmbientLight {
+        color: ORANGE_RED.into(),
+        brightness: 0.02,
+    });
+
+    commands.spawn((
+        DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform {
+            translation: Vec3::new(0.0, 2.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 4.),
+            ..default()
+        },
+    ));
+    
 }
 
 
@@ -212,7 +260,7 @@ fn stone_shoot(
     }
 
     let mut spot_pos = spotty.single_mut();
-    spot_pos.translation = stone_pos.translation + Vec3::new(0.0, 11.0, -5.0);
+    spot_pos.translation = stone_pos.translation + Vec3::new(1.0, 5.0, 1.0);
 
     if stone_pos.translation.distance(Vec3::ZERO) > 64.0 {
         stone_pos.translation = Vec3::new(0.0, 0.5, 0.0);
