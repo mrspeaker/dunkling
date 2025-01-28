@@ -205,7 +205,25 @@ fn setup(
             ..default()
         },
     ));
-    
+
+
+    let mut rng = rand::thread_rng();
+    let dist = 25.0;
+    for _ in 0..200 {
+        let pos = Vec3::new(rng.gen_range(-dist..dist), 0.0, -rng.gen_range(0.0..dist*2.0));
+        commands
+            .spawn((
+                Name::new("Person1"),
+                SceneRoot(
+                    asset_server
+                        .load(GltfAssetLabel::Scene(0).from_asset("person.glb"))),
+                Transform::from_xyz(pos.x, pos.y, pos.z)
+                //.with_rotation(Quat::from_rotation_z(PI / 2.))
+                    .with_scale(Vec3::splat(0.2))));
+
+    }
+
+
 }
 
 
