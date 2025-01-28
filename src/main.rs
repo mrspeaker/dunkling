@@ -78,6 +78,7 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
+    // sheet v2
     let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         //Mesh3d(cube_mesh_handle),
@@ -86,7 +87,7 @@ fn setup(
         Friction::new(10.0),
         //Collider::cuboid(width, 0.3, length),
         //ColliderConstructor::ConvexHullFromMesh,
-        ColliderConstructor::TrimeshFromMesh,
+        ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
         MeshMaterial3d(materials.add(Color::WHITE)),
         Transform::from_xyz(
@@ -132,6 +133,7 @@ fn setup(
         Collider::sphere(radius),
         //LinearDamping(0.8),
         //Friction::new(10.0),
+        //CollisionMargin(0.1),
         Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
         //Mesh3d(meshes.add(Cylinder::new(radius, height))),
@@ -195,8 +197,18 @@ fn stone_shoot(
     mut commands: Commands,
 ){
     let (mut stone_pos, mut vel_vec) = stone.single_mut();
+    let power = 0.5;
     if input.pressed(KeyCode::KeyW) {
-        vel_vec.z = -5.0;
+        vel_vec.z += power;
+    }
+    if input.pressed(KeyCode::KeyS) {
+        vel_vec.z -= power;
+    }
+    if input.pressed(KeyCode::KeyA) {
+        vel_vec.x += power;
+    }
+    if input.pressed(KeyCode::KeyD) {
+        vel_vec.x -= power;
     }
 
     let mut spot_pos = spotty.single_mut();
@@ -214,7 +226,7 @@ fn stone_shoot(
         let mesh = meshes.get_mut(mesh_handle).unwrap();
         toggle_texture(mesh);
         commands.entity(e).remove::<Collider>();
-        commands.entity(e).insert(ColliderConstructor::TrimeshFromMesh);
+        commands.entity(e).insert(ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES));
     }
 
 }
