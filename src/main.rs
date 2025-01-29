@@ -2,6 +2,7 @@ use avian3d::prelude::*;
 
 use bevy::{
     prelude::*,
+    core_pipeline::Skybox,
     color::palettes::css::*,
     color::palettes::tailwind::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
@@ -20,9 +21,8 @@ use rand::prelude::*;
 use std::f32::consts::*;
 
 const STONE_RADIUS: f32 = 10.0;
-const STONE_DAMPENING: f32 = 0.15;
-const SUBS: u32 = 50;
-const MAX_DIST: f32 = STONE_RADIUS * 100.0;
+const STONE_DAMPENING: f32 = 0.08;
+const SUBS: u32 = 100;
 
 #[derive(Component)]
 struct TrackingCamera;
@@ -59,13 +59,14 @@ fn main() {
                 ..default()
             }),
             WireframePlugin,
-            MeshPickingPlugin            ,
+            MeshPickingPlugin,
 //            PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()))
         .insert_resource(WireframeConfig {
             global: false,
-            default_color: DARK_SLATE_GRAY.into(),
-        })        .add_systems(Startup, setup)
+            default_color: Color::linear_rgb(0.1,0.1, 0.),
+        })
+        .add_systems(Startup, setup)
         .add_systems(Update, (
             cam_track,
             terrain_mouse,
@@ -91,15 +92,17 @@ fn setup(
 
     // start line
     commands.spawn((
-        Mesh3d(meshes.add(Cuboid::new(width-0.01, 0.1, 0.2))),
+        Mesh3d(meshes.add(Cuboid::new(STONE_RADIUS * 10.0, 0.1, STONE_RADIUS * 0.5))),
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
     // sheet v2
-    let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
+    let plane = Plane3d::default().mesh().size(length, length).subdivisions(SUBS);
+
+    //let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         //Mesh3d(cube_mesh_handle),
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(length, length).subdivisions(SUBS))),
+        Mesh3d(meshes.add(plane)),
         RigidBody::Static,
         Friction::new(10.0),
         //Collider::cuboid(width, 0.3, length),
@@ -116,17 +119,7 @@ fn setup(
         Sheet
     ));
 
-    // sheet
-/*    commands.spawn((
-        RigidBody::Static,
-        Friction::new(0.05),
-        Collider::cuboid(width, 0.3, length),
-        Mesh3d(meshes.add(Cuboid::new(width, 0.3, length))),
-        MeshMaterial3d(materials.add(Color::WHITE)),
-        Transform::from_xyz(0.0, 0.0, -length / 2.0 + (pre_area / 2.0) ),
-    ));
-*/
-    // jump
+/*    // jump
     commands.spawn((
         RigidBody::Static,
 //        Friction::new(100.0),
@@ -136,7 +129,7 @@ fn setup(
         Transform::from_xyz(-width/2.0, 0.0, -10.0)
             .with_rotation(Quat::from_rotation_x(PI / 8.)),
         BobX{ dt: 0.0 }
-    ));
+    ));*/
 
 
     // stone
@@ -157,52 +150,59 @@ fn setup(
     // Light
     commands.spawn((
         PointLight {
-            intensity: 100_000.0,
-            color: WHITE.into(),
+            intensity: 10_000_000.0,
+            range: 100.0,
+            radius: 100.0,
+            color: BLUE.into(),
             shadows_enabled: true,
             ..default()
         },
         Spotty
     ));
 
+    //let skybox_handle = asset_server.load("cubemap.png");
     // Camera
     commands.spawn((
         Camera3d::default(),
+        /*Skybox {
+            image: skybox_handle.clone(),
+            brightness: 1000.0,
+            ..default()
+        },*/
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, STONE_RADIUS * 10.0)
             .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
         TrackingCamera
     ));
 
+    // Thor
     let texture_handle = asset_server.load("thor.png");
     let aspect = 1.0;//0.25;
     let quad_width = STONE_RADIUS * 10.0;
-    let quad_handle = meshes.add(Rectangle::new(quad_width, quad_width * aspect));
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
         double_sided: true,
-        cull_mode: None,//Some(Face::Back)
+        cull_mode: None, //Some(Face::Back)
         alpha_mode: AlphaMode::Blend,
         unlit: true,
         ..default()
     });
     commands.spawn((
-        Mesh3d(quad_handle.clone()),
+        Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width * aspect))),
         MeshMaterial3d(material_handle),
         Transform::from_xyz(STONE_RADIUS * 2.0, 1.0, STONE_RADIUS * 3.0)
             .with_rotation(Quat::from_euler(
-                // YXZ order corresponds to the common
-                // "yaw"/"pitch"/"roll" convention
+                // YXZ = "yaw"/"pitch"/"roll"
                 EulerRot::YXZ,
                 (180.0_f32).to_radians(),
                 (0.0_f32).to_radians(),
                 (0.0_f32).to_radians(),
-            )),
-        //Quat::from_rotation_y(PI/2.0)
+            ))
     ));
 
+    // Lights
     commands.insert_resource(AmbientLight {
         color: ORANGE_RED.into(),
-        brightness: 0.02,
+        brightness: 100.0,
     });
 
     commands.spawn((
@@ -212,17 +212,34 @@ fn setup(
             ..default()
         },
         Transform {
-            translation: Vec3::new(0.0, 2.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 4.),
+            translation: Vec3::new(0.0, 100.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 2.0),
+            ..default()
+        },
+    ));
+
+    commands.spawn((
+        DirectionalLight {
+            illuminance: light_consts::lux::OVERCAST_DAY,
+            shadows_enabled: true,
+            ..default()
+        },
+        Transform {
+            translation: Vec3::new(100.0, 100.0, 50.0),
+            rotation: Quat::from_rotation_x(-PI * 0.9),
             ..default()
         },
     ));
 
 
+    // Lil people
     let mut rng = rand::thread_rng();
-    let dist = 25.0;
+    let w = STONE_RADIUS * 10.0;
     for _ in 0..200 {
-        let pos = Vec3::new(rng.gen_range(-dist..dist), 0.1, -rng.gen_range(0.0..dist*2.0));
+        let pos = Vec3::new(
+            rng.gen_range(-w..w),
+            0.1,
+            -rng.gen_range(0.0..length));
         commands
             .spawn((
                 Name::new("Person1"),
@@ -367,7 +384,7 @@ fn stone_shoot(
     }
     if input.pressed(KeyCode::KeyS) {
         vel_vec.z -= power;
-    }// STONE_RADIUS * 1.5;
+    }
     if input.pressed(KeyCode::KeyA) {
         vel_vec.x += power;
     }
@@ -376,7 +393,7 @@ fn stone_shoot(
     }
 
     let mut spot_pos = spotty.single_mut();
-    spot_pos.translation = stone_pos.translation + Vec3::new(1.0, 5.0, 1.0);
+    spot_pos.translation = stone_pos.translation + Vec3::new(1.0, STONE_RADIUS * 2.0, 1.0);
 
     if stone_pos.translation.y < -STONE_RADIUS * 5.0 {
         stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 0.0);
