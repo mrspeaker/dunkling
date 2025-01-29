@@ -13,7 +13,6 @@ pub struct TownsfolkPlugin;
 impl Plugin for TownsfolkPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup);
-        app.add_systems(Update, update);
     }
 }
 
@@ -43,8 +42,4 @@ fn setup(
                  //   .with_scale(Vec3::splat(0.2))));
 
     }
-}
-
-fn update() {
-
 }

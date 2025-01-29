@@ -30,7 +30,7 @@ pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(WireframePlugin);
+//        app.add_plugins(WireframePlugin);
         app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
@@ -53,20 +53,26 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
-    // sheet v2
-    let plane = Plane3d::default().mesh().size(SHEET_LENGTH, SHEET_LENGTH).subdivisions(SUBS);
+    let plane = Plane3d::default().mesh().size(SHEET_LENGTH, SHEET_LENGTH).subdivisions(SUBS);//.build()
+    //rando_y(plane);
+
+    let mat = StandardMaterial {
+        base_color: Color::linear_rgb(0.2,0.4, 0.0),
+        perceptual_roughness: 0.1,
+        ..default()
+    };
 
     //let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         //Mesh3d(cube_mesh_handle),
-        Mesh3d(meshes.add(plane)),
+        Mesh3d(meshes.add(plane.clone())),
         RigidBody::Static,
         Friction::new(10.0),
         //Collider::cuboid(width, 0.3, length),
         //ColliderConstructor::ConvexHullFromMesh,
         ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(Color::linear_rgb(0.2,0.4, 0.))),
+        MeshMaterial3d(materials.add(mat)),
         Transform::from_xyz(
             0.0,
             0.0,
@@ -158,3 +164,13 @@ fn _create_plane_mesh() -> Mesh {
     ]))
 
 }
+
+/*fn rando_y(mut mesh: Mesh) {
+    let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+
+    let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+        panic!("Unexpected vertex format, expected Float32x3.");
+    };
+
+    vert_pos[1000][1] = 50.0;
+}*/

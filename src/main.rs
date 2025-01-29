@@ -1,6 +1,7 @@
 mod game;
 pub mod camera;
 pub mod constants;
+pub mod player;
 pub mod sheet;
 pub mod townsfolk;
 
