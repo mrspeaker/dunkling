@@ -39,7 +39,7 @@ struct BobX {
 }
 
 #[derive(Component)]
-struct CustomMesh;
+struct Sheet;
 
 fn main() {
     App::new()
@@ -59,7 +59,13 @@ fn main() {
             global: false,
             default_color: DARK_SLATE_GRAY.into(),
         })        .add_systems(Startup, setup)
-        .add_systems(Update, (cam_track, stone_shoot, bob, draw_mesh_intersections))
+        .add_systems(Update, (
+            cam_track,
+            terrain_sculpt,
+            stone_shoot,
+            bob,
+            draw_mesh_intersections
+        ))
         .run();
 }
 
@@ -99,7 +105,7 @@ fn setup(
             -length / 2.0 + (pre_area / 2.0) )
             .with_rotation(Quat::from_rotation_y(PI / 4.001)),
         Wireframe,
-        CustomMesh
+        Sheet
     ));
 
     // sheet
@@ -227,6 +233,50 @@ fn setup(
 
 }
 
+fn terrain_sculpt(
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut ray_cast: MeshRayCast,
+    terrain_query: Query<(Entity, &Mesh3d), With<Sheet>>,
+    //mut meshes: ResMut<Assets<Mesh>>,
+) {
+    if !buttons.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    let pos = Vec3::ZERO;
+    let ray = Ray3d::new(Vec3::new(pos.x, pos.y + 1.5, pos.z),  Dir3::NEG_Y);
+
+    let filter = |entity| terrain_query.contains(entity);
+    // let early_exit_test = |_entity| false;
+    let settings = RayCastSettings::default()
+        .with_filter(&filter);
+    let hits = ray_cast.cast_ray(ray, &settings);
+
+    for (e, rmh) in hits.iter() {
+        let (e, mesh_handle) = terrain_query.get_single().expect("Query not successful");
+        //let mesh = meshes.get_mut(mesh_handle).unwrap();
+
+       /* commands.trigger_targets(
+            SpawnBodyPart { pos: mesh_point, item_id: ItemId::Leg, normal },
+            mesh
+        );*/
+
+        /*
+        //let mut mesh = terrain_query.get(*e).unwrap();//.affine().inverse().transform_point3(world_pos);
+        let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+
+        let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+            panic!("Unexpected vertex format, expected Float32x3.");
+    };
+        */
+
+
+        println!("{:?} {:?}", rmh, mesh_handle);
+    }
+
+}
+
+
 
 fn cam_track(
     time: Res<Time>,
@@ -263,7 +313,7 @@ fn stone_shoot(
     input: Res<ButtonInput<KeyCode>>,
     mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
     mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
-    mesh_query: Query<(Entity, &Mesh3d), With<CustomMesh>>,
+    mesh_query: Query<(Entity, &Mesh3d), With<Sheet>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands,
 ){
