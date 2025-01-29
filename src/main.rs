@@ -235,45 +235,34 @@ fn setup(
 
 fn terrain_sculpt(
     buttons: Res<ButtonInput<MouseButton>>,
+    camera_query: Single<(&Camera, &GlobalTransform)>,
+    windows: Single<&Window>,
     mut ray_cast: MeshRayCast,
     terrain_query: Query<(Entity, &Mesh3d), With<Sheet>>,
-    //mut meshes: ResMut<Assets<Mesh>>,
 ) {
     if !buttons.just_pressed(MouseButton::Left) {
         return;
     }
 
-    let pos = Vec3::ZERO;
-    let ray = Ray3d::new(Vec3::new(pos.x, pos.y + 1.5, pos.z),  Dir3::NEG_Y);
+    // Cursor to ray
+    let (camera, camera_transform) = *camera_query;
+    let Some(cursor_position) = windows.cursor_position() else {
+        return;
+    };
+    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
+        return;
+    };
 
+    //let pos = Vec3::ZERO;
+    //let ray = Ray3d::new(Vec3::new(pos.x, pos.y + 1.5, pos.z),  Dir3::NEG_Y);
     let filter = |entity| terrain_query.contains(entity);
     // let early_exit_test = |_entity| false;
     let settings = RayCastSettings::default()
         .with_filter(&filter);
     let hits = ray_cast.cast_ray(ray, &settings);
-
     for (e, rmh) in hits.iter() {
-        let (e, mesh_handle) = terrain_query.get_single().expect("Query not successful");
-        //let mesh = meshes.get_mut(mesh_handle).unwrap();
-
-       /* commands.trigger_targets(
-            SpawnBodyPart { pos: mesh_point, item_id: ItemId::Leg, normal },
-            mesh
-        );*/
-
-        /*
-        //let mut mesh = terrain_query.get(*e).unwrap();//.affine().inverse().transform_point3(world_pos);
-        let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
-
-        let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
-            panic!("Unexpected vertex format, expected Float32x3.");
-    };
-        */
-
-
-        println!("{:?} {:?}", rmh, mesh_handle);
+        println!("Triangle index: {:?}", rmh.triangle_index);
     }
-
 }
 
 
