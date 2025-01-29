@@ -41,6 +41,13 @@ struct BobX {
 #[derive(Component)]
 struct Sheet;
 
+#[derive(Debug, Event)]
+pub struct TerrainSculpt {
+    pub up: bool,
+    pub idx: usize,
+}
+
+
 fn main() {
     App::new()
         .add_plugins((
@@ -61,11 +68,12 @@ fn main() {
         })        .add_systems(Startup, setup)
         .add_systems(Update, (
             cam_track,
-            terrain_sculpt,
+            terrain_mouse,
             stone_shoot,
             bob,
             draw_mesh_intersections
         ))
+        .add_observer(terrain_sculpt)
         .run();
 }
 
@@ -233,16 +241,25 @@ fn setup(
 
 }
 
-fn terrain_sculpt(
+#[derive(Default)]
+struct LastMouse {
+    idx: usize
+}
+
+fn terrain_mouse(
     buttons: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
     camera_query: Single<(&Camera, &GlobalTransform)>,
     windows: Single<&Window>,
     mut ray_cast: MeshRayCast,
     terrain_query: Query<(Entity, &Mesh3d), With<Sheet>>,
+    mut last_mouse: Local<LastMouse>,
+    mut commands: Commands,
 ) {
-    if !buttons.just_pressed(MouseButton::Left) {
+    if !buttons.pressed(MouseButton::Left) {
         return;
     }
+    let is_shift = keys.pressed(KeyCode::ShiftLeft);
 
     // Cursor to ray
     let (camera, camera_transform) = *camera_query;
@@ -253,18 +270,55 @@ fn terrain_sculpt(
         return;
     };
 
-    //let pos = Vec3::ZERO;
-    //let ray = Ray3d::new(Vec3::new(pos.x, pos.y + 1.5, pos.z),  Dir3::NEG_Y);
     let filter = |entity| terrain_query.contains(entity);
     // let early_exit_test = |_entity| false;
     let settings = RayCastSettings::default()
         .with_filter(&filter);
     let hits = ray_cast.cast_ray(ray, &settings);
     for (e, rmh) in hits.iter() {
-        println!("Triangle index: {:?}", rmh.triangle_index);
+        if let Some(idx) = rmh.triangle_index {
+            if idx != last_mouse.idx {
+                commands.trigger(TerrainSculpt { up: !is_shift, idx });
+                last_mouse.idx = idx;
+            }
+        }
     }
 }
 
+fn terrain_sculpt(
+    trigger: Trigger<TerrainSculpt>,
+    mesh_query: Query<(Entity, &Mesh3d), With<Sheet>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut commands: Commands,
+) {
+    let (e, mesh_handle) = mesh_query.get_single().expect("Query not successful");
+    let mesh = meshes.get_mut(mesh_handle).unwrap();
+    let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+
+    let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+        panic!("Unexpected vertex format, expected Float32x3.");
+    };
+
+    let v = trigger.event().idx;
+    let up = trigger.event().up;
+
+    let amount = STONE_RADIUS * 0.1 * if up { 1.0 } else { -1.0 };
+    let r1 = (SUBS + 2) as usize;
+
+    vert_pos[v][1] = (vert_pos[v][1] + amount).max(0.0);
+    if v > 0 {
+        vert_pos[v-1][1] = (vert_pos[v-1][1] + amount / 2.0).max(0.0);
+    }
+    vert_pos[v+1][1] = (vert_pos[v+1][1] + amount / 2.0).max(0.0);
+    if v > r1 {
+        vert_pos[v-r1][1] = (vert_pos[v-r1][1]  + amount / 2.0).max(0.0);
+    }
+    vert_pos[v+r1][1] = (vert_pos[v+r1][1] + amount / 2.0).max(0.0);
+
+    commands.entity(e).remove::<Collider>();
+    commands.entity(e).insert(ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES));
+
+}
 
 
 fn cam_track(
@@ -324,7 +378,7 @@ fn stone_shoot(
     let mut spot_pos = spotty.single_mut();
     spot_pos.translation = stone_pos.translation + Vec3::new(1.0, 5.0, 1.0);
 
-    if stone_pos.translation.distance(Vec3::ZERO) > MAX_DIST {
+    if stone_pos.translation.y < -STONE_RADIUS * 5.0 {
         stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 0.0);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;
@@ -417,7 +471,6 @@ fn toggle_texture(mesh_to_change: &mut Mesh) {
     vert_pos[v+1][1] -= amount / 2.0;
     if v > r1 { vert_pos[v-r1][1] -= amount / 2.0; }
     vert_pos[v+r1][1] -= amount / 2.0;
-
 
     let v = rng.gen_range(0..(SUBS*SUBS)) as usize;
     let r1 = (SUBS + 2) as usize;
