@@ -38,10 +38,13 @@ fn terrain_mouse(
     mut last_mouse: Local<LastMouse>,
     mut commands: Commands,
 ) {
-    if !buttons.pressed(MouseButton::Left) {
+    let is_left = buttons.pressed(MouseButton::Left);
+    let is_right = buttons.pressed(MouseButton::Right);
+
+    if !(is_left || is_right) {
         return;
     }
-    let is_shift = keys.pressed(KeyCode::ShiftLeft);
+    let is_shift = is_right || keys.pressed(KeyCode::ShiftLeft);
 
     // Cursor to ray
     let (camera, camera_transform) = *camera_query;
