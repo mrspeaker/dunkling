@@ -75,7 +75,8 @@ fn stone_shoot(
     mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
     mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
 ){
-    let (mut stone_pos, mut vel_vec) = stone.single_mut();
+    let Ok((mut stone_pos, mut vel_vec)) = stone.get_single_mut() else { return; };
+
     let power = 0.5;
     if input.pressed(KeyCode::KeyW) {
         vel_vec.z += power;

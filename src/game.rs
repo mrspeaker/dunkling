@@ -44,8 +44,7 @@ impl Plugin for GamePlugin {
         app.add_plugins(splash_plugin);
         app.add_plugins(TownsfolkPlugin);
 
-        app.add_systems(Startup, setup);
-
+        app.add_systems(OnEnter(GameState::InGame), setup);
         app.init_state::<GameState>();
     }
 }

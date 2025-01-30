@@ -40,9 +40,9 @@ pub fn cam_track(
     mut camera: Query<&mut Transform, With<TrackingCamera>>,
 ){
     //let dt = time.delta_secs();
-    let stone_pos = stone.single();
+    let Ok(stone_pos) = stone.get_single() else { return; };
 
-    let mut camera = camera.single_mut();
+    let Ok(mut camera) = camera.get_single_mut() else { return; };
 
     let dist = stone_pos.translation.distance(camera.translation);
 /*    if stone_pos.translation.z > -5.0 && dist > STONE_RADIUS * 3.0  {
