@@ -26,7 +26,7 @@ fn setup(
     for _ in 0..200 {
         let pos = Vec3::new(
             rng.gen_range(-w..w),
-            0.1,
+            20.0,
             -rng.gen_range(0.0..SHEET_LENGTH));
         commands
             .spawn((
@@ -34,9 +34,9 @@ fn setup(
                 SceneRoot(
                     asset_server
                         .load(GltfAssetLabel::Scene(0).from_asset("person.glb"))),
-                ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
+                //ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
                 RigidBody::Dynamic,
-//                Collider::cuboid(1.0, 1.0, 1.0),
+                Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
                 //.with_rotation(Quat::from_rotation_z(PI / 2.))
                  //   .with_scale(Vec3::splat(0.2))));

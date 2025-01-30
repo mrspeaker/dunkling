@@ -3,6 +3,7 @@ pub mod camera;
 pub mod constants;
 pub mod player;
 pub mod sheet;
+pub mod splash;
 pub mod townsfolk;
 
 use bevy::{
@@ -18,6 +19,7 @@ use game::GamePlugin;
 
 fn main() {
     App::new()
+        .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.1)))
         .add_plugins(
             DefaultPlugins.set(RenderPlugin {
                 render_creation: RenderCreation::Automatic(WgpuSettings {

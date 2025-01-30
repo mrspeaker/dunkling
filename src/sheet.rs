@@ -101,7 +101,7 @@ pub fn terrain_sculpt(
     let v = trigger.event().idx;
     let up = trigger.event().up;
 
-    let amount = STONE_RADIUS * 0.2 * if up { 1.0 } else { -1.0 };
+    let amount = STONE_RADIUS * 0.5 * if up { 1.0 } else { -1.0 };
 
     // Modify the selected vert, plus the 4 around it (a bit less)
     let r1 = (SUBS + 2) as usize;

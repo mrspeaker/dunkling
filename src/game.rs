@@ -14,6 +14,7 @@ use crate::constants::{
 use crate::camera::CameraPlugin;
 use crate::player::PlayerPlugin;
 use crate::sheet::SheetPlugin;
+use crate::splash::splash_plugin;
 use crate::townsfolk::TownsfolkPlugin;
 
 pub struct GamePlugin;
@@ -24,6 +25,13 @@ pub struct Stone;
 #[derive(Component)]
 pub struct Spotty;
 
+#[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
+pub enum GameState {
+    #[default]
+    Splash,
+    InGame,
+}
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
@@ -33,9 +41,12 @@ impl Plugin for GamePlugin {
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
         app.add_plugins(SheetPlugin);
+        app.add_plugins(splash_plugin);
         app.add_plugins(TownsfolkPlugin);
 
         app.add_systems(Startup, setup);
+
+        app.init_state::<GameState>();
     }
 }
 
@@ -54,10 +65,10 @@ fn setup(
         //Friction::new(10.0),
         //CollisionMargin(0.1),
         //Mass(weight),
-        LinearVelocity(Vec3::new(0.0, 0.0, 0.0)),
+        LinearVelocity(Vec3::new(0.0, 0.0, 80.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(0.0, STONE_RADIUS * 2.0, 0.0),
+        Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -800.0),
     ));
 
     // Light
@@ -130,4 +141,12 @@ fn setup(
         },
     ));
 
+}
+
+
+// Generic system that takes a component as a parameter, and will despawn all entities with that component
+pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn_recursive();
+    }
 }
