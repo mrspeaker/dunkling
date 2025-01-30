@@ -112,7 +112,7 @@ fn setup(
         },
         Transform {
             translation: Vec3::new(0.0, 100.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 2.0),
+            rotation: Quat::from_rotation_y(-PI / 2.0),
             ..default()
         },
     ));
@@ -125,7 +125,7 @@ fn setup(
         },
         Transform {
             translation: Vec3::new(100.0, 100.0, 50.0),
-            rotation: Quat::from_rotation_x(-PI * 0.9),
+            rotation: Quat::from_rotation_x(-PI * 1.1),
             ..default()
         },
     ));

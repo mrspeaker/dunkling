@@ -9,6 +9,7 @@ use bevy::{
     }
 };
 use std::f32::consts::*;
+use rand::prelude::*;
 
 use crate::constants::{
     STONE_RADIUS,
@@ -53,8 +54,8 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
-    let plane = Plane3d::default().mesh().size(SHEET_LENGTH, SHEET_LENGTH).subdivisions(SUBS);//.build()
-    //rando_y(plane);
+    let mut plane = Plane3d::default().mesh().size(SHEET_LENGTH, SHEET_LENGTH).subdivisions(SUBS).build();
+    rando_y(&mut plane);
 
     let mat = StandardMaterial {
         base_color: Color::linear_rgb(0.2,0.4, 0.0),
@@ -65,7 +66,7 @@ fn setup(
     //let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         //Mesh3d(cube_mesh_handle),
-        Mesh3d(meshes.add(plane.clone())),
+        Mesh3d(meshes.add(plane)),
         RigidBody::Static,
         Friction::new(10.0),
         //Collider::cuboid(width, 0.3, length),
@@ -100,7 +101,7 @@ pub fn terrain_sculpt(
     let v = trigger.event().idx;
     let up = trigger.event().up;
 
-    let amount = STONE_RADIUS * 0.1 * if up { 1.0 } else { -1.0 };
+    let amount = STONE_RADIUS * 0.2 * if up { 1.0 } else { -1.0 };
 
     // Modify the selected vert, plus the 4 around it (a bit less)
     let r1 = (SUBS + 2) as usize;
@@ -119,6 +120,21 @@ pub fn terrain_sculpt(
     commands.entity(e).remove::<Collider>();
     commands.entity(e).insert(ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES));
 
+}
+
+fn get_neighbours(v: usize) -> Vec<usize> {
+    let r1 = (SUBS + 2) as usize;
+    let mut ns: Vec<usize> = vec![];
+
+    if v > 0 {
+        ns.push(v - 1);
+    }
+    ns.push(v + 1);
+    if v > r1 {
+        ns.push(v - r1);
+    }
+    ns.push(v + r1);
+    return ns;
 }
 
 #[rustfmt::skip]
@@ -165,12 +181,22 @@ fn _create_plane_mesh() -> Mesh {
 
 }
 
-/*fn rando_y(mut mesh: Mesh) {
+fn rando_y(mesh: &mut Mesh) {
     let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
-    vert_pos[1000][1] = 50.0;
-}*/
+    let mut rng = rand::thread_rng();
+    for _ in 0..1000 {
+        let v = rng.gen_range(0..10000);
+        let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
+        vert_pos[v][1] = h;
+        let ns = get_neighbours(v);
+        for v in ns {
+            vert_pos[v][1] = h / 2.0;
+        }
+    }
+    mesh.compute_normals();
+}

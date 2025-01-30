@@ -60,7 +60,7 @@ fn terrain_mouse(
     for (_e, rmh) in hits.iter() {
         if let Some(idx) = rmh.triangle_index {
             if idx != last_mouse.idx {
-                commands.trigger(TerrainSculpt { up: !is_shift, idx });
+                commands.trigger(TerrainSculpt { up: is_shift, idx });
                 last_mouse.idx = idx;
             }
         }
