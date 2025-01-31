@@ -8,6 +8,8 @@ use bevy::{
 use std::f32::consts::*;
 
 use crate::constants::{
+    SHEET_LENGTH,
+    SHEET_PRE_AREA,
     STONE_RADIUS,
     STONE_DAMPENING,
     STONE_MAX_VEL
@@ -95,10 +97,10 @@ fn setup(
         //Friction::new(10.0),
         //CollisionMargin(0.1),
         //Mass(weight),
-        LinearVelocity(Vec3::new(0.0, 0.0, 80.0)),
+        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -800.0),
+        Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -SHEET_LENGTH + SHEET_PRE_AREA),
     ));
 
     // Light

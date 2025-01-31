@@ -3,11 +3,12 @@ use bevy::{
     prelude::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
-        mesh::{Indices, VertexAttributeValues},
+        mesh::{Indices, VertexAttributeValues, PlaneMeshBuilder},
         render_asset::RenderAssetUsages,
         render_resource::PrimitiveTopology,
     }
 };
+
 use std::f32::consts::*;
 use rand::prelude::*;
 
@@ -15,6 +16,7 @@ use crate::constants::{
     STONE_RADIUS,
     SUBS,
     SHEET_LENGTH,
+    SHEET_WIDTH,
     SHEET_PRE_AREA,
 };
 
@@ -33,7 +35,7 @@ pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-//        app.add_plugins(WireframePlugin);
+        app.add_plugins(WireframePlugin);
         app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
@@ -57,7 +59,11 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
-    let mut plane = Plane3d::default().mesh().size(SHEET_LENGTH, SHEET_LENGTH).subdivisions(SUBS).build();
+    let mut plane = build_plane( Plane3d::default()
+        .mesh()
+        .size(SHEET_WIDTH, SHEET_LENGTH)
+        .subdivisions(SUBS)
+        );//.build();
     rando_y(&mut plane);
 
     let mat = StandardMaterial {
@@ -81,8 +87,8 @@ fn setup(
         Transform::from_xyz(
             0.0,
             0.0,
-            -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) )
-            .with_rotation(Quat::from_rotation_y(PI / 4.001)),
+            -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
+            //.with_rotation(Quat::from_rotation_y(PI / 4.001)),
         Wireframe,
         Sheet
     ));
@@ -90,7 +96,7 @@ fn setup(
     let mut rng = rand::thread_rng();
     for _ in 0..200 {
         let pos = Vec3::new(
-            rng.gen_range((-SHEET_LENGTH / 4.0)..(SHEET_LENGTH / 4.0)),
+            rng.gen_range((-SHEET_WIDTH / 4.0)..(SHEET_WIDTH/ 4.0)),
             0.0,
             rng.gen_range((-SHEET_LENGTH)..0.0)
         );
@@ -207,15 +213,16 @@ fn _create_plane_mesh() -> Mesh {
 }
 
 fn rando_y(mesh: &mut Mesh) {
-    let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+    let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
-    let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+    let VertexAttributeValues::Float32x3(vert_pos) = vert else {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
     let mut rng = rand::thread_rng();
+    let num_verts = vert_pos.len();
     for _ in 0..1000 {
-        let v = rng.gen_range(0..10000);
+        let v = rng.gen_range(0..(num_verts - (SUBS * 2) as usize));
         let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
         vert_pos[v][1] = h;
         let ns = get_neighbours(v);
@@ -224,4 +231,52 @@ fn rando_y(mesh: &mut Mesh) {
         }
     }
     mesh.compute_normals();
+}
+
+
+fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
+    let z_vertex_count = (mb.subdivisions * 2) + 2;
+    let x_vertex_count = mb.subdivisions + 2;
+    let num_vertices = (z_vertex_count * x_vertex_count) as usize;
+    let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
+
+    let mut positions: Vec<Vec3> = Vec::with_capacity(num_vertices);
+    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(num_vertices);
+    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(num_vertices);
+    let mut indices: Vec<u32> = Vec::with_capacity(num_indices);
+
+    let rotation = Quat::from_rotation_arc(Vec3::Y, *mb.plane.normal);
+    let size = mb.plane.half_size * 2.0;
+
+    for z in 0..z_vertex_count {
+        for x in 0..x_vertex_count {
+            let tx = x as f32 / (x_vertex_count - 1) as f32;
+            let tz = z as f32 / (z_vertex_count - 1) as f32;
+            let pos = rotation * Vec3::new((-0.5 + tx) * size.x, 0.0, (-0.5 + tz) * size.y);
+            positions.push(pos);
+            normals.push(mb.plane.normal.to_array());
+            uvs.push([tx, tz]);
+        }
+    }
+
+    for z in 0..z_vertex_count - 1 {
+        for x in 0..x_vertex_count - 1 {
+            let quad = z * x_vertex_count + x;
+            indices.push(quad + x_vertex_count + 1);
+            indices.push(quad + 1);
+            indices.push(quad + x_vertex_count);
+            indices.push(quad);
+            indices.push(quad + x_vertex_count);
+            indices.push(quad + 1);
+        }
+    }
+
+    Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    )
+        .with_inserted_indices(Indices::U32(indices))
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
 }
