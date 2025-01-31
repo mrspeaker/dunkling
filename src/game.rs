@@ -167,7 +167,7 @@ fn setup(
     ));
 
     commands.insert_resource(
-        SplashTimer(Timer::from_seconds(5.0, TimerMode::Once))
+        SplashTimer(Timer::from_seconds(3.5, TimerMode::Once))
     );
 
 }
@@ -202,7 +202,6 @@ pub fn countdown(
 struct StoneStats {
     stopped_dt: f32,
 }
-
 
 fn track_stone(
     stone: Query<&LinearVelocity, With<Stone>>,
