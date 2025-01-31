@@ -87,16 +87,25 @@ fn setup(
         Sheet
     ));
 
-    commands
-        .spawn((
-            Name::new("Tree"),
-            OnGameScreen,
-            SceneRoot(
-                asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
-            RigidBody::Static,
-            Collider::cuboid(1.0, 1.0, 1.7),
-            Transform::from_xyz(0.0, 10.0, -SHEET_LENGTH / 2.0)));
+    let mut rng = rand::thread_rng();
+    for _ in 0..200 {
+        let pos = Vec3::new(
+            rng.gen_range((-SHEET_LENGTH / 4.0)..(SHEET_LENGTH / 4.0)),
+            0.0,
+            rng.gen_range((-SHEET_LENGTH)..0.0)
+        );
+
+        commands
+            .spawn((
+                Name::new("Tree"),
+                OnGameScreen,
+                SceneRoot(
+                    asset_server
+                        .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
+                RigidBody::Static,
+                Collider::cuboid(1.0, 1.0, 1.7),
+                Transform::from_xyz(pos.x, pos.y, pos.z)));
+    }
 
 }
 
