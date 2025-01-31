@@ -13,7 +13,7 @@ pub fn splash_plugin(app: &mut App) {
 struct OnSplashScreen;
 
 #[derive(Resource, Deref, DerefMut)]
-struct SplashTimer(Timer);
+pub struct SplashTimer(pub Timer);
 
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let thor = asset_server.load("thor.png");
@@ -38,15 +38,20 @@ fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ));
         });
 
-    commands.insert_resource(SplashTimer(Timer::from_seconds(1.0, TimerMode::Once)));
+    commands.insert_resource(SplashTimer(Timer::from_seconds(15.0, TimerMode::Once)));
 }
 
-fn countdown(
+
+pub fn countdown(
     mut game_state: ResMut<NextState<GameState>>,
+    buttons: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
     mut timer: ResMut<SplashTimer>,
 ) {
     if timer.tick(time.delta()).finished() {
+        game_state.set(GameState::InGame);
+    }
+    if timer.elapsed_secs() > 0.5 && buttons.just_pressed(MouseButton::Left) {
         game_state.set(GameState::InGame);
     }
 }

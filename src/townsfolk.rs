@@ -8,11 +8,14 @@ use crate::constants::{
     SHEET_LENGTH
 };
 
+use crate::game::{GameState, OnGameScreen};
+
+
 pub struct TownsfolkPlugin;
 
 impl Plugin for TownsfolkPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
+        app.add_systems(OnEnter(GameState::InGame), setup);
     }
 }
 
@@ -31,11 +34,14 @@ fn setup(
         commands
             .spawn((
                 Name::new("Person1"),
+                OnGameScreen,
                 SceneRoot(
                     asset_server
                         .load(GltfAssetLabel::Scene(0).from_asset("person.glb"))),
                 //ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
                 RigidBody::Dynamic,
+                MaxLinearSpeed(20.0),
+
                 Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
                 //.with_rotation(Quat::from_rotation_z(PI / 2.))

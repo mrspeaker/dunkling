@@ -18,6 +18,8 @@ use crate::constants::{
     SHEET_PRE_AREA,
 };
 
+use crate::game::{GameState, OnGameScreen};
+
 #[derive(Component)]
 pub struct Sheet;
 
@@ -37,7 +39,7 @@ impl Plugin for SheetPlugin {
             default_color: Color::linear_rgb(0.1,0.1, 0.),
         });
 
-        app.add_systems(Startup, setup);
+        app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_observer(terrain_sculpt);
     }
 }
@@ -47,9 +49,9 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     // start line
     commands.spawn((
+        OnGameScreen,
         Mesh3d(meshes.add(Cuboid::new(STONE_RADIUS * 10.0, 0.1, STONE_RADIUS * 0.5))),
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
@@ -65,6 +67,7 @@ fn setup(
 
     //let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
+        OnGameScreen,
         //Mesh3d(cube_mesh_handle),
         Mesh3d(meshes.add(plane)),
         RigidBody::Static,

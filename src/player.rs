@@ -10,6 +10,7 @@ use crate::sheet::{Sheet, TerrainSculpt};
 use crate::game::{Stone, Spotty};
 
 use crate::constants::STONE_RADIUS;
+use crate::game::{GameState, GamePhase};
 
 pub struct PlayerPlugin;
 
@@ -19,7 +20,7 @@ impl Plugin for PlayerPlugin {
             terrain_mouse,
             stone_shoot,
             draw_sheet_intersections
-        ));
+        ).run_if(in_state(GamePhase::Sculpting)));
     }
 }
 
@@ -91,11 +92,11 @@ fn stone_shoot(
         vel_vec.x -= power;
     }
 
-    let mut spot_pos = spotty.single_mut();
+    let Ok(mut spot_pos) = spotty.get_single_mut() else { return; };
     spot_pos.translation = stone_pos.translation + Vec3::new(1.0, STONE_RADIUS * 2.0, 1.0);
 
     if stone_pos.translation.y < -STONE_RADIUS * 5.0 {
-        stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 0.0);
+        stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 1000.0);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;
         vel_vec.z = 0.0;

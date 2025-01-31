@@ -10,11 +10,12 @@ use std::f32::consts::*;
 use crate::constants::{
     STONE_RADIUS,
     STONE_DAMPENING,
+    STONE_MAX_VEL
 };
 use crate::camera::CameraPlugin;
 use crate::player::PlayerPlugin;
 use crate::sheet::SheetPlugin;
-use crate::splash::splash_plugin;
+use crate::splash::{splash_plugin, SplashTimer};
 use crate::townsfolk::TownsfolkPlugin;
 
 pub struct GamePlugin;
@@ -25,6 +26,9 @@ pub struct Stone;
 #[derive(Component)]
 pub struct Spotty;
 
+#[derive(Component)]
+pub struct OnGameScreen;
+
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
     #[default]
@@ -32,11 +36,20 @@ pub enum GameState {
     InGame,
 }
 
+#[derive(SubStates, Clone, PartialEq, Eq, Hash, Debug, Default)]
+#[source(GameState = GameState::InGame)]
+pub enum GamePhase {
+    #[default]
+    Aiming,
+    Sculpting,
+    EndGame
+}
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             MeshPickingPlugin,
-//            PhysicsDebugPlugin::default(),
+            // PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()));
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
@@ -44,8 +57,15 @@ impl Plugin for GamePlugin {
         app.add_plugins(splash_plugin);
         app.add_plugins(TownsfolkPlugin);
 
+        app.init_state::<GameState>()
+            .add_sub_state::<GamePhase>();
+
         app.add_systems(OnEnter(GameState::InGame), setup);
-        app.init_state::<GameState>();
+        app.add_systems(Update, countdown.run_if(in_state(GamePhase::Aiming)));
+        app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
+
+        app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
+        app.add_systems(Update, track_stone.run_if(in_state(GamePhase::Sculpting)));
     }
 }
 
@@ -58,9 +78,11 @@ fn setup(
     // stone
     commands.spawn((
         Stone,
-        RigidBody::Dynamic,
+        OnGameScreen,
+        //RigidBody::Dynamic,
         Collider::sphere(STONE_RADIUS),
         LinearDamping(STONE_DAMPENING),
+        MaxLinearSpeed(STONE_MAX_VEL),
         //Friction::new(10.0),
         //CollisionMargin(0.1),
         //Mass(weight),
@@ -80,7 +102,8 @@ fn setup(
             shadows_enabled: true,
             ..default()
         },
-        Spotty
+        Spotty,
+        OnGameScreen
     ));
 
     // Thor
@@ -105,7 +128,8 @@ fn setup(
                 (180.0_f32).to_radians(),
                 (0.0_f32).to_radians(),
                 (0.0_f32).to_radians(),
-            ))
+            )),
+        OnGameScreen
     ));
 
     // Lights
@@ -125,6 +149,7 @@ fn setup(
             rotation: Quat::from_rotation_y(-PI / 2.0),
             ..default()
         },
+        OnGameScreen
     ));
 
     commands.spawn((
@@ -138,14 +163,57 @@ fn setup(
             rotation: Quat::from_rotation_x(-PI * 1.1),
             ..default()
         },
+        OnGameScreen
     ));
+
+    commands.insert_resource(
+        SplashTimer(Timer::from_seconds(5.0, TimerMode::Once))
+    );
 
 }
 
+
+fn fire_stone(
+    stone: Query<Entity, With<Stone>>,
+    mut commands: Commands
+) {
+    let Ok(e) = stone.get_single() else { return; };
+    commands.entity(e).insert(RigidBody::Dynamic);
+}
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
         commands.entity(entity).despawn_recursive();
     }
+}
+
+pub fn countdown(
+    mut game_state: ResMut<NextState<GamePhase>>,
+    time: Res<Time>,
+    mut timer: ResMut<SplashTimer>,
+) {
+    if timer.tick(time.delta()).finished() {
+        game_state.set(GamePhase::Sculpting);
+    }
+}
+
+#[derive(Default, Debug)]
+struct StoneStats {
+    stopped_dt: f32,
+}
+
+
+fn track_stone(
+    stone: Query<&LinearVelocity, With<Stone>>,
+    mut phase: ResMut<NextState<GameState>>,
+    mut stone_stats: Local<StoneStats>,
+){
+    let Ok(vel) = stone.get_single() else { return; };
+    //dbg!(vel.length());
+
+    if vel.length() < 2.0 {
+        phase.set(GameState::Splash);
+    }
+
 }
