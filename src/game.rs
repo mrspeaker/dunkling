@@ -75,6 +75,15 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
+
+    let texture_handle = asset_server.load("textures/stone076.jpg");
+    // this material renders the texture normally
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(texture_handle.clone()),
+        perceptual_roughness: 0.8,
+        ..default()
+    });
+
     // stone
     commands.spawn((
         Stone,
@@ -88,7 +97,7 @@ fn setup(
         //Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 80.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
-        MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
+        MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -800.0),
     ));
 

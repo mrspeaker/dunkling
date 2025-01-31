@@ -3,8 +3,11 @@ name = "dunkling"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies.bevy]
+version = "0.15.1"
+features = ["jpeg"]
+
 [dependencies]
-bevy = "0.15.1"
 avian3d = { git = "https://github.com/Jondolf/avian", branch = "main" }
 rand = "0.8.5"
 
