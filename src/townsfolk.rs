@@ -10,7 +10,6 @@ use crate::constants::{
 
 use crate::game::{GameState, OnGameScreen};
 
-
 pub struct TownsfolkPlugin;
 
 impl Plugin for TownsfolkPlugin {
@@ -37,15 +36,12 @@ fn setup(
                 OnGameScreen,
                 SceneRoot(
                     asset_server
-                        .load(GltfAssetLabel::Scene(0).from_asset("person.glb"))),
+                        .load(GltfAssetLabel::Scene(0).from_asset("models/person.glb"))),
                 //ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
                 RigidBody::Dynamic,
                 MaxLinearSpeed(20.0),
 
                 Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
-                //.with_rotation(Quat::from_rotation_z(PI / 2.))
-                 //   .with_scale(Vec3::splat(0.2))));
-
     }
 }

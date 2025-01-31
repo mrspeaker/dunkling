@@ -48,6 +48,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
 ) {
     // start line
     commands.spawn((
@@ -85,6 +86,18 @@ fn setup(
         Wireframe,
         Sheet
     ));
+
+    commands
+        .spawn((
+            Name::new("Tree"),
+            OnGameScreen,
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
+            RigidBody::Static,
+            Collider::cuboid(1.0, 1.0, 1.7),
+            Transform::from_xyz(0.0, 10.0, -SHEET_LENGTH / 2.0)));
+
 }
 
 pub fn terrain_sculpt(
