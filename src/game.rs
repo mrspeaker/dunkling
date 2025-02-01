@@ -86,6 +86,8 @@ fn setup(
         ..default()
     });
 
+
+
     // stone
     commands.spawn((
         Stone,

@@ -31,6 +31,13 @@ pub struct TerrainSculpt {
     pub idx: usize,
 }
 
+#[derive(Resource, Clone, Debug)]
+pub struct HeightMap {
+    pub map: Vec<Vec<f32>>,
+}
+
+
+
 pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
@@ -40,7 +47,6 @@ impl Plugin for SheetPlugin {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
         });
-
         app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_observer(terrain_sculpt);
     }
@@ -59,12 +65,20 @@ fn setup(
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
+
+    let map_width = 10;
+    let map_height = 10;
+    let map: Vec<Vec<f32>> = vec![vec![0.0; map_width]; map_height];
+    let mut height_map = HeightMap{map};
+
     let mut plane = build_plane( Plane3d::default()
         .mesh()
         .size(SHEET_WIDTH, SHEET_LENGTH)
         .subdivisions(SUBS)
         );//.build();
-    rando_y(&mut plane);
+    terraform(&mut plane, &mut height_map);
+
+    commands.insert_resource(height_map);
 
     let mat = StandardMaterial {
         base_color: Color::linear_rgb(0.2,0.4, 0.0),
@@ -119,6 +133,7 @@ pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
     mesh_query: Query<(Entity, &Mesh3d), With<Sheet>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut height_map: ResMut<HeightMap>,
     mut commands: Commands,
 ) {
     let (e, mesh_handle) = mesh_query.get_single().expect("Query not successful");
@@ -212,7 +227,7 @@ fn _create_plane_mesh() -> Mesh {
 
 }
 
-fn rando_y(mesh: &mut Mesh) {
+fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
     let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     let VertexAttributeValues::Float32x3(vert_pos) = vert else {
