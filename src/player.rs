@@ -177,7 +177,7 @@ fn aim_mouse(
 
     if aim.power_up  {
         aim.power += time.delta_secs();
-        t.translation.x -= time.delta_secs() * 25.0;
+        t.translation.x -= time.delta_secs() * 50.0;
     }
 
     if aim.power_up && buttons.just_released(MouseButton::Left) {

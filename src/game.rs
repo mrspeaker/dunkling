@@ -240,7 +240,7 @@ fn on_hurl_stone(
     mut stone: Query<&mut LinearVelocity, With<Stone>>
 ) {
     let Ok(mut vel) = stone.get_single_mut() else { return; };
-    vel.z = trigger.event().power * 50.0;
+    vel.z = trigger.event().power * 100.0;
     info!("power: {}", vel.z);
     phase.set(GamePhase::Sculpting);
 }

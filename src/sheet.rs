@@ -42,7 +42,7 @@ pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_plugins(WireframePlugin);
+        app.add_plugins(WireframePlugin);
         app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
@@ -149,17 +149,23 @@ pub fn terrain_sculpt(
 
     let amount = STONE_RADIUS * 0.5 * if up { 1.0 } else { -1.0 };
 
+    let maxx = 51204; // TODO! Actually get num!
+
     // Modify the selected vert, plus the 4 around it (a bit less)
     let r1 = (SUBS + 2) as usize;
     vert_pos[v][1] = (vert_pos[v][1] + amount).max(0.0);
     if v > 0 {
         vert_pos[v-1][1] = (vert_pos[v-1][1] + amount / 2.0).max(0.0);
     }
-    vert_pos[v+1][1] = (vert_pos[v+1][1] + amount / 2.0).max(0.0);
+    if v+1 < maxx {
+        vert_pos[v+1][1] = (vert_pos[v+1][1] + amount / 2.0).max(0.0);
+    }
     if v > r1 {
         vert_pos[v-r1][1] = (vert_pos[v-r1][1]  + amount / 2.0).max(0.0);
     }
-    vert_pos[v+r1][1] = (vert_pos[v+r1][1] + amount / 2.0).max(0.0);
+    if v + r1 < maxx {
+        vert_pos[v+r1][1] = (vert_pos[v+r1][1] + amount / 2.0).max(0.0);
+    }
 
     mesh.compute_normals();
 
@@ -250,7 +256,10 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
 
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
-    let z_vertex_count = (mb.subdivisions * 3) + 2;
+    let size = mb.plane.half_size * 2.0;
+    let ratio = size.y / size.x;
+    let z_subs = (mb.subdivisions as f32 * ratio) as u32;
+    let z_vertex_count = z_subs + 2;
     let x_vertex_count = mb.subdivisions + 2;
     let num_vertices = (z_vertex_count * x_vertex_count) as usize;
     let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
@@ -261,7 +270,6 @@ fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
     let mut indices: Vec<u32> = Vec::with_capacity(num_indices);
 
     let rotation = Quat::from_rotation_arc(Vec3::Y, *mb.plane.normal);
-    let size = mb.plane.half_size * 2.0;
 
     for z in 0..z_vertex_count {
         for x in 0..x_vertex_count {
