@@ -9,8 +9,19 @@ use bevy::{
 use crate::sheet::{Sheet, TerrainSculpt};
 use crate::game::{Stone, Spotty};
 
-use crate::constants::STONE_RADIUS;
-use crate::game::{GameState, GamePhase};
+use crate::constants::{
+    STONE_RADIUS,
+    SHEET_LENGTH,
+    SHEET_PRE_AREA,
+};
+use crate::game::{GameState, GamePhase, OnGameScreen};
+
+const INIT_X:f32 = STONE_RADIUS * 5.0;
+
+#[derive(Debug, Event)]
+pub struct HurlStone {
+    pub power: f32,
+}
 
 pub struct PlayerPlugin;
 
@@ -21,7 +32,32 @@ impl Plugin for PlayerPlugin {
             stone_shoot,
             draw_sheet_intersections
         ).run_if(in_state(GamePhase::Sculpting)));
+        app.add_systems(Update, (
+            aim_mouse,
+        ).run_if(in_state(GamePhase::Aiming)));
+        app.add_systems(OnEnter(GamePhase::Aiming), setup_aim);
     }
+}
+
+#[derive(Component)]
+struct PowerBall;
+
+fn setup_aim(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+
+) {
+    commands.spawn((
+        OnGameScreen,
+        PowerBall,
+        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
+        AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
+        Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.25))),
+        MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
+        Transform::from_xyz(STONE_RADIUS * 5.0, STONE_RADIUS * 8.0, -SHEET_LENGTH + SHEET_PRE_AREA * 2.0),
+    ));
+
 }
 
 #[derive(Default)]
@@ -112,5 +148,46 @@ fn draw_sheet_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gi
     {
         gizmos.sphere(point, 5.0, RED_500);
         gizmos.arrow(point, point + normal.normalize() * 5.0, PINK_100);
+    }
+}
+
+#[derive(Default, Debug)]
+struct Aiming {
+    fired: bool,
+    power_up: bool,
+    power: f32,
+}
+
+fn aim_mouse(
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut aim: Local<Aiming>,
+    time: Res<Time>,
+    mut powerball: Query<&mut Transform, With<PowerBall>>,
+    mut commands: Commands
+) {
+    if aim.fired {
+        return;
+    }
+
+    let Ok(mut t) = powerball.get_single_mut() else { return; };
+
+    if buttons.just_pressed(MouseButton::Left) {
+        aim.power_up = true;
+    }
+
+    if aim.power_up  {
+        aim.power += time.delta_secs();
+        t.translation.x -= time.delta_secs() * 20.0;
+    }
+
+    if aim.power_up && buttons.just_released(MouseButton::Left) {
+        if aim.power > 1.0 {
+            // trigger fire!
+            commands.trigger(HurlStone { power: aim.power });
+        }
+        aim.power_up = false;
+        aim.power = 0.0;
+        t.translation.x = INIT_X;
+
     }
 }

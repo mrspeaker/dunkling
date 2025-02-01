@@ -15,7 +15,7 @@ use crate::constants::{
     STONE_MAX_VEL
 };
 use crate::camera::CameraPlugin;
-use crate::player::PlayerPlugin;
+use crate::player::{PlayerPlugin, HurlStone};
 use crate::sheet::SheetPlugin;
 use crate::splash::{splash_plugin, SplashTimer};
 use crate::townsfolk::TownsfolkPlugin;
@@ -68,6 +68,9 @@ impl Plugin for GamePlugin {
 
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
         app.add_systems(Update, track_stone.run_if(in_state(GamePhase::Sculpting)));
+
+        app.add_observer(on_hurl_stone);
+
     }
 }
 
@@ -99,7 +102,7 @@ fn setup(
         //Friction::new(10.0),
         //CollisionMargin(0.1),
         //Mass(weight),
-        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),
+        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
@@ -181,7 +184,7 @@ fn setup(
     ));
 
     commands.insert_resource(
-        SplashTimer(Timer::from_seconds(3.5, TimerMode::Once))
+        SplashTimer(Timer::from_seconds(15.0, TimerMode::Once))
     );
 
 }
@@ -219,14 +222,25 @@ struct StoneStats {
 
 fn track_stone(
     stone: Query<&LinearVelocity, With<Stone>>,
-    mut phase: ResMut<NextState<GameState>>,
+    mut state: ResMut<NextState<GameState>>,
     mut stone_stats: Local<StoneStats>,
 ){
     let Ok(vel) = stone.get_single() else { return; };
     //dbg!(vel.length());
 
     if vel.length() < 2.0 {
-        phase.set(GameState::Splash);
+        state.set(GameState::Splash);
     }
 
+}
+
+fn on_hurl_stone(
+    trigger: Trigger<HurlStone>,
+    mut phase: ResMut<NextState<GamePhase>>,
+    mut stone: Query<&mut LinearVelocity, With<Stone>>
+) {
+    let Ok(mut vel) = stone.get_single_mut() else { return; };
+    vel.z = trigger.event().power * 50.0;
+    info!("power: {}", vel.z);
+    phase.set(GamePhase::Sculpting);
 }
