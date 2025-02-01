@@ -98,6 +98,7 @@ fn setup(
         //CollisionMargin(0.1),
         //Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),
+        AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -SHEET_LENGTH + SHEET_PRE_AREA),
