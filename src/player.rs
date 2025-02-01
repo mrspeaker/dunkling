@@ -16,7 +16,7 @@ use crate::constants::{
 };
 use crate::game::{GameState, GamePhase, OnGameScreen};
 
-const INIT_X:f32 = STONE_RADIUS * 5.0;
+const INIT_X:f32 = STONE_RADIUS * 10.0;
 
 #[derive(Debug, Event)]
 pub struct HurlStone {
@@ -53,9 +53,9 @@ fn setup_aim(
         PowerBall,
         LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
-        Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.25))),
+        Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(STONE_RADIUS * 5.0, STONE_RADIUS * 8.0, -SHEET_LENGTH + SHEET_PRE_AREA * 2.0),
+        Transform::from_xyz(INIT_X, STONE_RADIUS * 9.0, -SHEET_LENGTH + SHEET_PRE_AREA * 2.0),
     ));
 
 }
@@ -177,7 +177,7 @@ fn aim_mouse(
 
     if aim.power_up  {
         aim.power += time.delta_secs();
-        t.translation.x -= time.delta_secs() * 20.0;
+        t.translation.x -= time.delta_secs() * 25.0;
     }
 
     if aim.power_up && buttons.just_released(MouseButton::Left) {
