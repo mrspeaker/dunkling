@@ -42,7 +42,7 @@ pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(WireframePlugin);
+        // app.add_plugins(WireframePlugin);
         app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
@@ -250,7 +250,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
 
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
-    let z_vertex_count = (mb.subdivisions * 2) + 2;
+    let z_vertex_count = (mb.subdivisions * 3) + 2;
     let x_vertex_count = mb.subdivisions + 2;
     let num_vertices = (z_vertex_count * x_vertex_count) as usize;
     let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
