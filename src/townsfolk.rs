@@ -79,7 +79,6 @@ fn move_peeps(
             t.translation += Vec3::new(dir.x, 0.0, dir.y) * speed.0 * dt;
             let dist = targ.distance(t.translation.xz());
             if dist <= 0.2 {
-                dbg!("hit target");
                 target.0 = None;
             }
         }
