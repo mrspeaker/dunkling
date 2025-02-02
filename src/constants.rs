@@ -4,5 +4,8 @@ pub const STONE_MAX_VEL: f32 = 400.0;
 
 pub const SHEET_LENGTH: f32 = 2000.0;
 pub const SHEET_WIDTH: f32 = 400.0;
+pub const SHEET_RATIO: f32 = SHEET_LENGTH / SHEET_WIDTH;
+pub const CELL_WIDTH: usize = 100;
+pub const CELL_LENGTH: usize = CELL_WIDTH * (SHEET_RATIO as usize);
+
 pub const SHEET_PRE_AREA: f32 = 50.0;
-pub const SUBS: u32 = 100;

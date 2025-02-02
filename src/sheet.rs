@@ -14,7 +14,8 @@ use rand::prelude::*;
 
 use crate::constants::{
     STONE_RADIUS,
-    SUBS,
+    CELL_WIDTH,
+    CELL_LENGTH,
     SHEET_LENGTH,
     SHEET_WIDTH,
     SHEET_PRE_AREA,
@@ -24,6 +25,7 @@ use crate::game::{GameState, OnGameScreen};
 
 #[derive(Component)]
 pub struct Sheet;
+
 
 #[derive(Debug, Event)]
 pub struct TerrainSculpt {
@@ -66,15 +68,13 @@ fn setup(
     ));
 
 
-    let map_width = 10;
-    let map_height = 10;
-    let map: Vec<Vec<f32>> = vec![vec![0.0; map_width]; map_height];
+    let map: Vec<Vec<f32>> = vec![vec![0.0; CELL_WIDTH]; CELL_LENGTH];
+    dbg!(CELL_WIDTH, CELL_LENGTH);
     let mut height_map = HeightMap{map};
 
     let mut plane = build_plane( Plane3d::default()
         .mesh()
         .size(SHEET_WIDTH, SHEET_LENGTH)
-        .subdivisions(SUBS)
         );//.build();
     terraform(&mut plane, &mut height_map);
 
@@ -129,6 +129,21 @@ fn setup(
 
 }
 
+fn set_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
+    let map = &mut height_map.map;
+    (*map)[hm_y][hm_x] = value;
+    verts[hm_y * CELL_WIDTH + hm_x][1] = value;
+}
+
+fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
+    let map = &mut height_map.map;
+    let cur = (*map)[hm_y][hm_x];
+    let next = (cur + value).max(0.0);
+    (*map)[hm_y][hm_x] = next;
+    verts[hm_y * CELL_WIDTH + hm_x][1] = next;
+}
+
+
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
     mesh_query: Query<(Entity, &Mesh3d), With<Sheet>>,
@@ -147,24 +162,14 @@ pub fn terrain_sculpt(
     let v = trigger.event().idx;
     let up = trigger.event().up;
 
-    let amount = STONE_RADIUS * 0.5 * if up { 1.0 } else { -1.0 };
+    let x = v % CELL_WIDTH;
+    let y = (v / CELL_WIDTH) as usize;
+    let h = STONE_RADIUS * 0.5 * if up { 1.0 } else { -1.0 };
 
-    let maxx = 51204; // TODO! Actually get num!
-
-    // Modify the selected vert, plus the 4 around it (a bit less)
-    let r1 = (SUBS + 2) as usize;
-    vert_pos[v][1] = (vert_pos[v][1] + amount).max(0.0);
-    if v > 0 {
-        vert_pos[v-1][1] = (vert_pos[v-1][1] + amount / 2.0).max(0.0);
-    }
-    if v+1 < maxx {
-        vert_pos[v+1][1] = (vert_pos[v+1][1] + amount / 2.0).max(0.0);
-    }
-    if v > r1 {
-        vert_pos[v-r1][1] = (vert_pos[v-r1][1]  + amount / 2.0).max(0.0);
-    }
-    if v + r1 < maxx {
-        vert_pos[v+r1][1] = (vert_pos[v+r1][1] + amount / 2.0).max(0.0);
+    add_height(x, y, h, &mut *height_map, &mut *vert_pos);
+    let ns = get_neighbours(x, y);
+    for (x, y) in ns {
+        add_height(x, y, h /2.0, &mut *height_map, &mut *vert_pos);
     }
 
     mesh.compute_normals();
@@ -174,63 +179,24 @@ pub fn terrain_sculpt(
 
 }
 
-fn get_neighbours(v: usize) -> Vec<usize> {
-    let r1 = (SUBS + 2) as usize;
-    let mut ns: Vec<usize> = vec![];
+fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
+    let w = CELL_WIDTH;
+    let l = CELL_LENGTH;
+    let mut ns: Vec<(usize,usize)> = vec![];
 
-    if v > 0 {
-        ns.push(v - 1);
+    if x > 0 {
+        ns.push((x - 1, z)); // left
     }
-    ns.push(v + 1);
-    if v > r1 {
-        ns.push(v - r1);
+    if x < w {
+        ns.push((x + 1, z)); // right
     }
-    ns.push(v + r1);
+    if z > 0 {
+        ns.push((x, z - 1)); // back
+    }
+    if z < l {
+        ns.push((x, z + 1))
+    }
     return ns;
-}
-
-#[rustfmt::skip]
-fn _create_plane_mesh() -> Mesh {
-    let w = 5.0 / 2.0;
-    let h = 50.0 / 2.0;
-
-    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::MAIN_WORLD | RenderAssetUsages::RENDER_WORLD)
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-        vec![
-            [-w, 0.0, -h],
-            [w, 0.0, -h],
-            [w, 0.0, h],
-            [-w, 0.0, h],
-
-            [w+w*2.0, 0.0, -h],
-            [w+w*2.0, 0.0, h],
-        ],
-    )
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_UV_0,
-        vec![
-            [0.0, 1.0], [0.0, 0.0], [1.0, 0.0], [1.0, 1.0],
-            [0.0, 1.0], [0.0, 0.0],
-        ],
-    )
-    .with_inserted_attribute(
-        Mesh::ATTRIBUTE_NORMAL,
-        vec![
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-
-            [0.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-        ],
-    )
-    .with_inserted_indices(Indices::U32(vec![
-        0,3,1, 1,3,2, // triangles making up the top (+y) facing side.
-        1,2,4, 4,2,5
-    ]))
-
 }
 
 fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
@@ -241,14 +207,15 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
     };
 
     let mut rng = rand::thread_rng();
-    let num_verts = vert_pos.len();
     for _ in 0..1000 {
-        let v = rng.gen_range(0..(num_verts - (SUBS * 2) as usize));
+        let x = rng.gen_range(0..CELL_WIDTH-1);
+        let y = rng.gen_range(0..CELL_LENGTH-1);
         let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
-        vert_pos[v][1] = h;
-        let ns = get_neighbours(v);
-        for v in ns {
-            vert_pos[v][1] = h / 2.0;
+        set_height(x, y, h, map, vert_pos);
+
+        let ns = get_neighbours(x, y);
+        for (x, y) in ns {
+            set_height(x, y, h /2.0, map, vert_pos);
         }
     }
     mesh.compute_normals();
@@ -257,10 +224,8 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
     let size = mb.plane.half_size * 2.0;
-    let ratio = size.y / size.x;
-    let z_subs = (mb.subdivisions as f32 * ratio) as u32;
-    let z_vertex_count = z_subs + 2;
-    let x_vertex_count = mb.subdivisions + 2;
+    let z_vertex_count = CELL_LENGTH as u32;
+    let x_vertex_count = CELL_WIDTH as u32;
     let num_vertices = (z_vertex_count * x_vertex_count) as usize;
     let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
 
