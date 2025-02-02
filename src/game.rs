@@ -53,10 +53,10 @@ impl Plugin for GamePlugin {
             MeshPickingPlugin,
             // PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()));
+        app.add_plugins(splash_plugin);
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
         app.add_plugins(SheetPlugin);
-        app.add_plugins(splash_plugin);
         app.add_plugins(TownsfolkPlugin);
 
         app.init_state::<GameState>()

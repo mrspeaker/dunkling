@@ -9,12 +9,17 @@ use crate::constants::{
 };
 
 use crate::game::{GameState, OnGameScreen};
+use crate::sheet::HeightMap;
+
+#[derive(Component)]
+struct Peep;
 
 pub struct TownsfolkPlugin;
 
 impl Plugin for TownsfolkPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), setup);
+        app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
     }
 }
 
@@ -33,6 +38,7 @@ fn setup(
         commands
             .spawn((
                 Name::new("Person1"),
+                Peep,
                 OnGameScreen,
                 SceneRoot(
                     asset_server
@@ -44,4 +50,12 @@ fn setup(
                 Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
+}
+
+fn move_peeps(
+    peeps: Query<&mut Transform, With<Peep>>,
+    height_map: Res<HeightMap>,
+) {
+    // 1. find pos in terms of hm
+    // 2. move.
 }

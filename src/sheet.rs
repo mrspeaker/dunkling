@@ -35,6 +35,10 @@ pub struct TerrainSculpt {
 
 #[derive(Resource, Clone, Debug)]
 pub struct HeightMap {
+    pub w: f32,
+    pub h: f32,
+    pub cell_w: usize,
+    pub cell_h: usize,
     pub map: Vec<Vec<f32>>,
 }
 
@@ -68,14 +72,18 @@ fn setup(
     ));
 
 
-    let map: Vec<Vec<f32>> = vec![vec![0.0; CELL_WIDTH]; CELL_LENGTH];
-    dbg!(CELL_WIDTH, CELL_LENGTH);
-    let mut height_map = HeightMap{map};
+    let mut height_map = HeightMap {
+        w: SHEET_WIDTH,
+        h: SHEET_LENGTH,
+        cell_w: CELL_WIDTH,
+        cell_h: CELL_LENGTH,
+        map: vec![vec![0.0; CELL_WIDTH]; CELL_LENGTH]
+    };
 
-    let mut plane = build_plane( Plane3d::default()
+    let mut plane = build_plane(Plane3d::default()
         .mesh()
         .size(SHEET_WIDTH, SHEET_LENGTH)
-        );//.build();
+    );
     terraform(&mut plane, &mut height_map);
 
     commands.insert_resource(height_map);
