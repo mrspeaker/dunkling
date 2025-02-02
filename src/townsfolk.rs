@@ -4,8 +4,8 @@ use bevy::prelude::*;
 use rand::prelude::*;
 
 use crate::constants::{
-    STONE_RADIUS,
-    SHEET_LENGTH
+    SHEET_LENGTH,
+    SHEET_WIDTH,
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -13,6 +13,13 @@ use crate::sheet::HeightMap;
 
 #[derive(Component)]
 struct Peep;
+
+#[derive(Component)]
+struct Target(Option<Vec2>);
+
+#[derive(Component)]
+struct Speed(f32);
+
 
 pub struct TownsfolkPlugin;
 
@@ -29,7 +36,7 @@ fn setup(
 ) {
     // Lil people
     let mut rng = rand::thread_rng();
-    let w = STONE_RADIUS * 10.0;
+    let w = SHEET_WIDTH / 2.0;
     for _ in 0..200 {
         let pos = Vec3::new(
             rng.gen_range(-w..w),
@@ -43,19 +50,49 @@ fn setup(
                 SceneRoot(
                     asset_server
                         .load(GltfAssetLabel::Scene(0).from_asset("models/person.glb"))),
-                //ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh),
-                RigidBody::Dynamic,
-                MaxLinearSpeed(20.0),
-
-                Collider::cuboid(1.0, 1.0, 1.7),
+                Target(None),
+                Speed(0.0),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
 }
 
 fn move_peeps(
-    peeps: Query<&mut Transform, With<Peep>>,
+    mut peeps: Query<(&mut Transform, &mut Target, &mut Speed), With<Peep>>,
     height_map: Res<HeightMap>,
+    time: Res<Time>
 ) {
-    // 1. find pos in terms of hm
-    // 2. move.
+    let dt = time.delta_secs();
+
+    for (mut t, mut target, mut speed) in peeps.iter_mut() {
+        let pos = t.translation;
+        if target.0.is_none() {
+            let mut rng = rand::thread_rng();
+            let x = rng.gen_range(-10.0..10.0);
+            let z = rng.gen_range(-10.0..10.0);
+            target.0 = Some(Vec2::new(pos.x + x, pos.z + z));
+            speed.0 = rng.gen_range(1.0..5.0);
+        }
+
+        // Move towards target
+        if let Some(targ) = target.0 {
+            let dir = (targ - pos.xz()).normalize();
+            t.translation += Vec3::new(dir.x, 0.0, dir.y) * speed.0 * dt;
+            let dist = targ.distance(t.translation.xz());
+            if dist <= 0.2 {
+                dbg!("hit target");
+                target.0 = None;
+            }
+        }
+
+        let pos = t.translation;
+        // TODO: wrong: x=0 is middle, not left of sheet.
+        if let Some(h) = height_map.pos_to_height(pos.x, pos.z) {
+            t.translation.y = h*1.1
+        } else {
+            // out of bounds
+            dbg!("out");
+            target.0 = None;
+        }
+
+    }
 }

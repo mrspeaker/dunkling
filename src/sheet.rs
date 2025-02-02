@@ -42,7 +42,41 @@ pub struct HeightMap {
     pub map: Vec<Vec<f32>>,
 }
 
+impl HeightMap {
+    /// Given a SHEET x and y coordinate,
+    /// return the corresponding CELL position.
+    pub fn get_cell(&self, x: f32, y: f32) -> Option<(usize, usize)> {
+        // Calculate the size of each cell in terms of SHEET coordinates
+        let cell_width = self.w / self.cell_w as f32;
+        let cell_height = self.h / self.cell_h as f32;
 
+        //Calculate the cell coordinates
+        let cell_x = (x / cell_width).floor() as usize;
+        let cell_y = (y / cell_height).floor() as usize;
+
+        // Check if cell position is out of map bounds
+        if cell_x >= self.cell_w || cell_y >= self.cell_h {
+            None // out of bound
+        } else {
+            Some((cell_x, cell_y))
+        }
+    }
+    pub fn pos_to_height(&self, x:f32, y:f32) -> Option<f32> {
+        let cell_pos = self.get_cell(x, y);
+        match cell_pos {
+            Some((x, y)) => Some(self.map[y][x]),
+            _ => None
+        }
+    }
+
+    pub fn get_random_cell(&self) -> (usize, usize) {
+        let mut rng = rand::thread_rng();
+        let cell_x = rng.gen_range(0..self.cell_w);
+        let cell_y = rng.gen_range(0..self.cell_h);
+        (cell_x, cell_y)
+    }
+
+}
 
 pub struct SheetPlugin;
 
@@ -228,7 +262,6 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
     }
     mesh.compute_normals();
 }
-
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
     let size = mb.plane.half_size * 2.0;
