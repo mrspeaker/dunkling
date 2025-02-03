@@ -3,7 +3,7 @@ use bevy::{
     //image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
     //math::Affine2,
     prelude::*,
-    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+//    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
         mesh::{Indices, VertexAttributeValues, PlaneMeshBuilder},
         render_asset::RenderAssetUsages,
@@ -118,10 +118,10 @@ pub struct SheetPlugin;
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
         // app.add_plugins(WireframePlugin);
-        app.insert_resource(WireframeConfig {
+        /*app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
-        });
+        });*/
         app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_observer(terrain_sculpt);
     }
@@ -193,7 +193,7 @@ fn setup(
             0.0,
             0.0,
             -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
-        Wireframe,
+        //Wireframe,
         Sheet
     ));
 
