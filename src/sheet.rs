@@ -1,5 +1,7 @@
 use avian3d::prelude::*;
 use bevy::{
+    //image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
+    //math::Affine2,
     prelude::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
@@ -88,13 +90,34 @@ impl HeightMap {
         (cell_x, cell_y)
     }
 
+    /// Bilinear interpolation to get height
+    pub fn get_height_at_pos(&self, x: f32, y:f32) -> Option<f32> {
+        // a-----b
+        // |     |
+        // |     |
+        // c-----d
+        //
+        // p1 = a + x * (b - a)
+        // p2 = c + x * (d - c)
+        // h = p1 + y * (p2 - p1)
+
+        // 1. Find the cells that surround (x, y)
+        let a = self.get_cell(x, y);
+        /*let b = match a {
+            Some((x, y)) => self.get_cell(x + 1, y),
+            _ => None
+        }*/
+        // 2. interpolate.
+        None
+    }
+
 }
 
 pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(WireframePlugin);
+        // app.add_plugins(WireframePlugin);
         app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
@@ -127,29 +150,49 @@ fn setup(
 
     commands.insert_resource(height_map);
 
+    /*
+    let texture_handle = asset_server.load_with_settings(
+        "textures/Ground037_2K-JPG_Color.jpg",
+        |s: &mut _| {
+            *s = ImageLoaderSettings {
+                sampler: ImageSampler::Descriptor(ImageSamplerDescriptor {
+                    // rewriting mode to repeat image,
+                    address_mode_u: ImageAddressMode::Repeat,
+                    address_mode_v: ImageAddressMode::Repeat,
+                    ..default()
+                }),
+                ..default()
+            }
+        });
+    // this material renders the texture normally
+    let uv_x = 2.0;
+    let uv_y = uv_x * SHEET_RATIO;
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(texture_handle.clone()),
+        perceptual_roughness: 0.8,
+        uv_transform: Affine2::from_scale(Vec2::new(uv_x, uv_y)),
+        ..default()
+    });
+    */
+
     let mat = StandardMaterial {
-        base_color: Color::linear_rgb(0.2,0.4, 0.0),
-        perceptual_roughness: 0.1,
+        base_color: Color::linear_rgb(0.36,0.7, 0.219),
+        perceptual_roughness: 0.5,
         ..default()
     };
 
-    //let cube_mesh_handle: Handle<Mesh> = meshes.add(create_plane_mesh());
     commands.spawn((
         OnGameScreen,
-        //Mesh3d(cube_mesh_handle),
         Mesh3d(meshes.add(plane)),
         RigidBody::Static,
         Friction::new(10.0),
-        //Collider::cuboid(width, 0.3, length),
-        //ColliderConstructor::ConvexHullFromMesh,
         ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(mat)),
+        MeshMaterial3d(materials.add(mat)), //material_handle),//mat)),
         Transform::from_xyz(
             0.0,
             0.0,
             -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
-            //.with_rotation(Quat::from_rotation_y(PI / 4.001)),
         Wireframe,
         Sheet
     ));

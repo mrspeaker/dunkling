@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 //use bevy::core_pipeline::Skybox;
+use bevy_atmosphere::prelude::*;
 
 use crate::constants::STONE_RADIUS;
 use crate::game::Stone;
@@ -13,6 +14,8 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup);
         app.add_systems(Update, cam_track);
+        app.add_plugins(AtmospherePlugin);
+
     }
 }
 
@@ -23,6 +26,7 @@ fn setup(
     // Camera
     commands.spawn((
         Camera3d::default(),
+        AtmosphereCamera::default(),
         /*Skybox {
             image: skybox_handle.clone(),
             brightness: 1000.0,
@@ -30,7 +34,7 @@ fn setup(
         },*/
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, STONE_RADIUS * 10.0)
             .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
-        TrackingCamera
+        TrackingCamera,
     ));
 }
 

@@ -1,5 +1,4 @@
 use avian3d::prelude::*;
-
 use bevy::{
     prelude::*,
     color::palettes::css::*,
@@ -63,7 +62,6 @@ impl Plugin for GamePlugin {
         app.add_plugins(PlayerPlugin);
         app.add_plugins(SheetPlugin);
         app.add_plugins(TownsfolkPlugin);
-
         app.init_state::<GameState>()
             .add_sub_state::<GamePhase>();
 
@@ -91,7 +89,6 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-
     let texture_handle = asset_server.load("textures/stone076.jpg");
     // this material renders the texture normally
     let material_handle = materials.add(StandardMaterial {
@@ -99,8 +96,6 @@ fn setup(
         perceptual_roughness: 0.8,
         ..default()
     });
-
-
 
     // stone
     commands.spawn((
@@ -162,8 +157,8 @@ fn setup(
 
     // Lights
     commands.insert_resource(AmbientLight {
-        color: Color::linear_rgb(1.0,1.0, 0.8),
-        brightness: 100.0,
+        color: Color::linear_rgb(1.0,1.0, 1.0),
+        brightness: 200.0,
     });
 
     commands.spawn((
@@ -173,22 +168,8 @@ fn setup(
             ..default()
         },
         Transform {
-            translation: Vec3::new(0.0, 100.0, 0.0),
-            rotation: Quat::from_rotation_y(-PI / 2.0),
-            ..default()
-        },
-        OnGameScreen
-    ));
-
-    commands.spawn((
-        DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
-            shadows_enabled: true,
-            ..default()
-        },
-        Transform {
-            translation: Vec3::new(100.0, 100.0, 50.0),
-            rotation: Quat::from_rotation_x(-PI * 1.1),
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 1.3),
             ..default()
         },
         OnGameScreen
