@@ -1,9 +1,9 @@
 use bevy::prelude::*;
-//use bevy::core_pipeline::Skybox;
 use bevy_atmosphere::prelude::*;
+use bevy_atmosphere::settings::SkyboxCreationMode;
 
 use crate::constants::STONE_RADIUS;
-use crate::game::Stone;
+use crate::game::{Stone, GameState};
 
 pub struct CameraPlugin;
 
@@ -16,26 +16,28 @@ impl Plugin for CameraPlugin {
         app.add_systems(Update, cam_track);
         app.add_plugins(AtmospherePlugin);
 
+
+        app.add_systems(OnEnter(GameState::InGame), add_atmos);
+        app.add_systems(OnExit(GameState::InGame), remove_atmos);
+
     }
 }
 
 fn setup(
     mut commands: Commands,
 ) {
-    //let skybox_handle = asset_server.load("cubemap.png");
     // Camera
     commands.spawn((
         Camera3d::default(),
-        AtmosphereCamera::default(),
-        /*Skybox {
-            image: skybox_handle.clone(),
-            brightness: 1000.0,
-            ..default()
-        },*/
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, STONE_RADIUS * 10.0)
             .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
         TrackingCamera,
     ));
+
+    commands.insert_resource(AtmosphereSettings {
+        skybox_creation_mode: SkyboxCreationMode::FromSpecifiedFar(3000.0),
+        ..default()
+    });
 }
 
 pub fn cam_track(
@@ -67,4 +69,20 @@ pub fn cam_track(
   //  }
 
 
+}
+
+fn add_atmos(
+    camera: Query<Entity, With<TrackingCamera>>,
+    mut commands: Commands
+) {
+    let Ok(camera) = camera.get_single() else { return; };
+    commands.entity(camera).insert(AtmosphereCamera::default());
+}
+
+fn remove_atmos(
+    camera: Query<Entity, With<TrackingCamera>>,
+    mut commands: Commands
+) {
+    let Ok(camera) = camera.get_single() else { return; };
+    commands.entity(camera).remove::<AtmosphereCamera>();
 }
