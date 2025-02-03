@@ -6,6 +6,9 @@ pub mod sheet;
 pub mod splash;
 pub mod townsfolk;
 
+#[cfg(test)]
+mod tests;
+
 use bevy::{
     prelude::*,
     render::{

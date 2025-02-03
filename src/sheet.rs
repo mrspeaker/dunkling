@@ -9,7 +9,6 @@ use bevy::{
     }
 };
 
-use std::f32::consts::*;
 use rand::prelude::*;
 
 use crate::constants::{
@@ -39,20 +38,33 @@ pub struct HeightMap {
     pub h: f32,
     pub cell_w: usize,
     pub cell_h: usize,
+    rat_w: f32,
+    rat_h: f32,
     pub map: Vec<Vec<f32>>,
 }
 
 impl HeightMap {
+    pub fn new(w: f32, h: f32, cell_w: usize, cell_h: usize) -> Self {
+        let rat_w = w / cell_w as f32;
+        let rat_h = h / cell_h as f32;
+        let map = vec![vec![0.0; cell_w]; cell_h];
+        HeightMap {
+            w,
+            h,
+            cell_w,
+            cell_h,
+            rat_w,
+            rat_h,
+            map,
+        }
+    }
+
     /// Given a SHEET x and y coordinate,
     /// return the corresponding CELL position.
     pub fn get_cell(&self, x: f32, y: f32) -> Option<(usize, usize)> {
-        // Calculate the size of each cell in terms of SHEET coordinates
-        let cell_width = self.w / self.cell_w as f32;
-        let cell_height = self.h / self.cell_h as f32;
-
         //Calculate the cell coordinates
-        let cell_x = (x / cell_width).floor() as usize;
-        let cell_y = (y / cell_height).floor() as usize;
+        let cell_x = (x / self.rat_w).floor() as usize;
+        let cell_y = (y / self.rat_h).floor() as usize;
 
         // Check if cell position is out of map bounds
         if cell_x >= self.cell_w || cell_y >= self.cell_h {
@@ -98,21 +110,14 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // start line
+    // end line
     commands.spawn((
         OnGameScreen,
         Mesh3d(meshes.add(Cuboid::new(STONE_RADIUS * 10.0, 0.1, STONE_RADIUS * 0.5))),
         MeshMaterial3d(materials.add(Color::BLACK)),
     ));
 
-
-    let mut height_map = HeightMap {
-        w: SHEET_WIDTH,
-        h: SHEET_LENGTH,
-        cell_w: CELL_WIDTH,
-        cell_h: CELL_LENGTH,
-        map: vec![vec![0.0; CELL_WIDTH]; CELL_LENGTH]
-    };
+    let mut height_map = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
 
     let mut plane = build_plane(Plane3d::default()
         .mesh()

@@ -85,11 +85,11 @@ fn move_peeps(
 
         let pos = t.translation;
         // TODO: wrong: x=0 is middle, not left of sheet.
-        if let Some(h) = height_map.pos_to_height(pos.x, pos.z) {
+        // need to transform this properly (get Sheet)
+        if let Some(h) = height_map.pos_to_height(pos.x + SHEET_WIDTH / 2.0, pos.z) {
             t.translation.y = h*1.1
         } else {
             // out of bounds
-            dbg!("out");
             target.0 = None;
         }
 
