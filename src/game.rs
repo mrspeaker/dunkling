@@ -47,6 +47,11 @@ pub enum GamePhase {
     EndGame
 }
 
+#[derive(Component)]
+pub struct TextDistance;
+#[derive(Component)]
+pub struct TextPower;
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
@@ -67,7 +72,13 @@ impl Plugin for GamePlugin {
         app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
 
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
-        app.add_systems(Update, track_stone.run_if(in_state(GamePhase::Sculpting)));
+        app.add_systems(
+            Update,
+            (
+                track_stone.run_if(in_state(GamePhase::Sculpting)),
+                text_distance,
+                text_power
+            ));
 
         app.add_observer(on_hurl_stone);
 
@@ -187,6 +198,43 @@ fn setup(
         SplashTimer(Timer::from_seconds(15.0, TimerMode::Once))
     );
 
+    commands.spawn((
+        TextFont {
+            font_size: 18.0,
+            ..default()
+        },
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(5.0),
+            left: Val::Px(5.0),
+            ..default()
+        },
+    ))
+        .with_child( Text::new("Distance:"))
+        .with_child((
+            Text::new(""),
+            TextDistance
+        ));
+
+    commands.spawn((
+        TextFont {
+            font_size: 18.0,
+            ..default()
+        },
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(24.0),
+            left: Val::Px(5.0),
+            ..default()
+        },
+    ))
+        .with_child( Text::new("Power:"))
+        .with_child((
+            Text::new(""),
+            TextPower
+        ));
+
+
 }
 
 
@@ -243,4 +291,28 @@ fn on_hurl_stone(
     vel.z = trigger.event().power * 100.0;
     info!("power: {}", vel.z);
     phase.set(GamePhase::Sculpting);
+}
+
+
+fn text_distance(
+    mut txt: Query<&mut Text, With<TextDistance>>,
+    stone: Query<&Transform, With<Stone>>
+) {
+    let Ok(t) = stone.get_single() else { return; };
+
+    for mut span in txt.iter_mut() {
+        let vtxt = t.translation.z;//vel.length();
+        span.0 = format!("{vtxt:.2}");
+    }
+}
+fn text_power(
+    mut txt: Query<&mut Text, With<TextPower>>,
+    stone: Query<&LinearVelocity, With<Stone>>
+) {
+    let Ok(vel) = stone.get_single() else { return; };
+
+    for mut span in txt.iter_mut() {
+        let vtxt = vel.length();
+        span.0 = format!("{vtxt:.2}");
+    }
 }
