@@ -63,7 +63,7 @@ impl HeightMap {
 
     /// Given a SHEET x and y coordinate,
     /// return the corresponding CELL position.
-    pub fn get_cell(&self, x: f32, y: f32) -> Option<(usize, usize)> {
+    pub fn get_cell_from_pos(&self, x: f32, y: f32) -> Option<(usize, usize)> {
         //Calculate the cell coordinates
         let cell_x = (x / self.rat_w).floor() as usize;
         let cell_y = (y / self.rat_h).floor() as usize;
@@ -76,13 +76,14 @@ impl HeightMap {
         }
     }
     pub fn pos_to_height(&self, x:f32, y:f32) -> Option<f32> {
-        let cell_pos = self.get_cell(x, y);
+        let cell_pos = self.get_cell_from_pos(x, y);
         match cell_pos {
             Some((x, y)) => Some(self.map[y][x]),
             _ => None
         }
     }
 
+    // Return a random cell x/y from the height map
     pub fn get_random_cell(&self) -> (usize, usize) {
         let mut rng = rand::thread_rng();
         let cell_x = rng.gen_range(0..self.cell_w);
@@ -92,21 +93,42 @@ impl HeightMap {
 
     /// Bilinear interpolation to get height
     pub fn get_height_at_pos(&self, x: f32, y:f32) -> Option<f32> {
-        // a-----b
-        // |     |
-        // |     |
-        // c-----d
+        // A-----B
+        // |--x,y|
+        // |  |  |
+        // C-----D
         //
-        // p1 = a + x * (b - a)
+        // p1 = Ax + x * (Bx - Ax)
         // p2 = c + x * (d - c)
         // h = p1 + y * (p2 - p1)
 
+        /*
+    v1 = original_img[x_floor, y_floor, :]
+    v2 = original_img[x_ceil, y_floor, :]
+    v3 = original_img[x_floor, y_ceil, :]
+        v4 = original_img[x_ceil, y_ceil, :]
+        #Estimate the pixel value q using pixel values of neighbours
+    q1 = v1 * (x_ceil - x) + v2 * (x - x_floor)
+    q2 = v3 * (x_ceil - x) + v4 * (x - x_floor)
+    q = q1 * (y_ceil - y) + q2 * (y - y_floor)
+    resized[i,j,:] = q
+        return resizde
+         */
+
+        let xo = x % self.rat_w;
+        let yo = x / self.rat_h;
+
         // 1. Find the cells that surround (x, y)
-        let a = self.get_cell(x, y);
-        /*let b = match a {
-            Some((x, y)) => self.get_cell(x + 1, y),
-            _ => None
-        }*/
+        let Some((cell_x, cell_y)) = self.get_cell_from_pos(x, y) else {
+            return None;
+        };
+        let a = self.map[cell_y][cell_x];
+        let b = self.map[cell_y][cell_x + 1];
+        let c = self.map[cell_y + 1][cell_x];
+        let d = self.map[cell_y + 1][cell_x + 1];
+
+//        let q1 = a * (
+
         // 2. interpolate.
         None
     }

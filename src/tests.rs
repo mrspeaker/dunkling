@@ -7,10 +7,10 @@ mod tests {
     fn pos_to_cell() {
         let mut height_map = HeightMap::new(100.0, 100.0, 10, 10);
 
-        let cell = height_map.get_cell(0.0, 0.0);
+        let cell = height_map.get_cell_from_pos(0.0, 0.0);
         assert_eq!(cell, Some((0, 0)));
 
-        let cell = height_map.get_cell(50.0, 50.0);
+        let cell = height_map.get_cell_from_pos(50.0, 50.0);
         assert_eq!(cell, Some((5, 5)));
 
         height_map.map[0][0] = 0.5;
