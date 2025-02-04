@@ -331,6 +331,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
             set_height(x, y, h /2.0, map, vert_pos);
         }
 }*/
+
     let perlin = PerlinNoise::new();
 
     let mut max = -9999.0;
