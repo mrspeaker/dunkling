@@ -10,6 +10,7 @@ use bevy::{
         render_resource::PrimitiveTopology,
     }
 };
+use perlin_noise::PerlinNoise;
 
 use rand::prelude::*;
 
@@ -319,7 +320,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
     };
 
     let mut rng = rand::thread_rng();
-    for _ in 0..1000 {
+    /*for _ in 0..1000 {
         let x = rng.gen_range(0..CELL_WIDTH-1);
         let y = rng.gen_range(0..CELL_LENGTH-1);
         let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
@@ -329,7 +330,22 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
         for (x, y) in ns {
             set_height(x, y, h /2.0, map, vert_pos);
         }
+}*/
+    let perlin = PerlinNoise::new();
+
+    let mut max = -9999.0;
+    let mut min = 9999.0;
+    for y in 0..map.cell_h {
+        for x in 0..map.cell_w {
+            let mut h = perlin.get3d([x as f64 / 10.0, y as f64 / 10.0, 0.0]);
+            h = h.max(0.5) - 0.5;
+            set_height(x, y, h as f32 * 50.0, map, vert_pos);
+
+            if h < min { min = h; };
+            if h > max { max = h; };
+        }
     }
+    dbg!(min, max);
     mesh.compute_normals();
 }
 
