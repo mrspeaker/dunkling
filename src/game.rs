@@ -2,6 +2,7 @@ use avian3d::prelude::*;
 use bevy::{
     prelude::*,
     color::palettes::css::*,
+    scene::SceneInstanceReady,
 };
 
 use std::f32::consts::*;
@@ -51,6 +52,13 @@ pub struct TextDistance;
 #[derive(Component)]
 pub struct TextPower;
 
+#[derive(Component)]
+pub struct BigThor;
+
+
+#[derive(Resource, Deref, DerefMut)]
+struct GraphHandle(AnimationGraph);
+
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
@@ -79,7 +87,7 @@ impl Plugin for GamePlugin {
             ));
 
         app.add_observer(on_hurl_stone);
-
+        app.add_observer(start_anims_on_load);
     }
 }
 
@@ -87,6 +95,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
     asset_server: Res<AssetServer>,
 ) {
     let texture_handle = asset_server.load("textures/stone076.jpg");
@@ -215,15 +224,25 @@ fn setup(
             TextPower
         ));
 
+    const BIG_THOR_PATH: &str = "models/mano.glb";
+    let (graph, node_indices) = AnimationGraph::from_clips([
+        asset_server.load(GltfAssetLabel::Animation(0).from_asset(BIG_THOR_PATH)),
+    ]);
+    dbg!(graph.clone(), node_indices);
+    graphs.add(graph);
+
 
     commands
         .spawn((
-            Name::new("Person1"),
+            Name::new("BigThor"),
+            BigThor,
             OnGameScreen,
             SceneRoot(
                 asset_server
-                    .load(GltfAssetLabel::Scene(0).from_asset("models/mano.glb"))),
-            Transform::from_xyz(0.0, 0.0, 1100.0)));
+                    .load(GltfAssetLabel::Scene(0).from_asset(BIG_THOR_PATH))),
+            Transform::from_xyz(0.0, 0.0, -SHEET_LENGTH + SHEET_PRE_AREA)
+                .with_scale(Vec3::splat(22.0))
+        ));
 
 
 }
@@ -305,5 +324,22 @@ fn text_power(
     for mut span in txt.iter_mut() {
         let vtxt = vel.length();
         span.0 = format!("{vtxt:.2}");
+    }
+}
+
+fn start_anims_on_load(
+    trigger: Trigger<SceneInstanceReady>,
+    thor: Query<Entity, With<BigThor>>,
+    mut players: Query<&mut AnimationPlayer>//, With<BigThor>>
+) {
+    let e = trigger.entity();
+    let Ok(thor) = thor.get_single() else { return; };
+    if e != thor { return; };
+
+    info!("got bigthor");
+
+    for mut player in players.iter_mut() {
+        info!("attempt to pla");
+        player.play(1.into()).repeat();
     }
 }
