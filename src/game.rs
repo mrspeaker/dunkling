@@ -216,6 +216,16 @@ fn setup(
         ));
 
 
+    commands
+        .spawn((
+            Name::new("Person1"),
+            OnGameScreen,
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/mano.glb"))),
+            Transform::from_xyz(0.0, 0.0, 1100.0)));
+
+
 }
 
 
