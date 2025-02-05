@@ -290,20 +290,20 @@ pub fn terrain_sculpt(
     add_height(c1x, c1y, h, &mut *height_map, &mut *vert_pos);
     let ns = get_neighbours(c1x, c1y);
     for (x, y) in ns {
-        add_height(x, y, h /2.0, &mut *height_map, &mut *vert_pos);
+        add_height(x, y, h * 0.8, &mut *height_map, &mut *vert_pos);
         let ns = get_neighbours(x, y);
         for (x, y) in ns {
-            add_height(x, y, h /4.0, &mut *height_map, &mut *vert_pos);
+            add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos);
         }
     }
     if c1x != c2x || c1y != c2y {
         add_height(c2x, c2y, h, &mut *height_map, &mut *vert_pos);
         let ns = get_neighbours(c2x, c2y);
         for (x, y) in ns {
-            add_height(x, y, h /2.0, &mut *height_map, &mut *vert_pos);
+            add_height(x, y, h * 0.8, &mut *height_map, &mut *vert_pos);
             let ns = get_neighbours(x, y);
             for (x, y) in ns {
-                add_height(x, y, h /4.0, &mut *height_map, &mut *vert_pos);
+                add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos);
             }
 
         }
