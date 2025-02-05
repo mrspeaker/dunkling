@@ -61,13 +61,12 @@ pub fn cam_track(
                 , Dir3::Y);
     } else {
 */
-    let move_amount = STONE_RADIUS * 5.0; //camera.forward() * 10.0;
-    camera.translation.y = STONE_RADIUS * 4.0;
-    camera.translation.x = stone_pos.translation.x - STONE_RADIUS * 10.0;
+    let move_amount = STONE_RADIUS * 10.0; //camera.forward() * 10.0;
+    camera.translation.y = STONE_RADIUS * 5.0;
     camera.translation.z = stone_pos.translation.z - move_amount ;//* 10.0 * dt;
     camera.look_at(stone_pos.translation
-                   + Vec3::new(0.0, 0.0, STONE_RADIUS * 10.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
-  //  }
+                   + Vec3::new(0.0, 0.0, STONE_RADIUS * 20.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
+    //  }
 
 
 }

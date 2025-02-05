@@ -33,6 +33,8 @@ pub struct Sheet;
 pub struct TerrainSculpt {
     pub up: bool,
     pub idx: usize,
+    pub p1: Vec3,
+    pub p2: Vec3,
 }
 
 #[derive(Resource, Clone, Debug)]
@@ -259,12 +261,12 @@ fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, 
 
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
-    mesh_query: Query<(Entity, &Mesh3d), With<Sheet>>,
+    mesh_query: Query<(Entity, &Mesh3d, &Transform), With<Sheet>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut height_map: ResMut<HeightMap>,
     mut commands: Commands,
 ) {
-    let (e, mesh_handle) = mesh_query.get_single().expect("Query not successful");
+    let (e, mesh_handle, t) = mesh_query.get_single().expect("Query not successful");
     let mesh = meshes.get_mut(mesh_handle).unwrap();
     let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
@@ -272,17 +274,39 @@ pub fn terrain_sculpt(
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
-    let v = trigger.event().idx;
-    let up = trigger.event().up;
+    let ev = trigger.event();
+    let up = ev.up;
+    let v = ev.idx;
+    // Get sheet position from world position
+    let p1 = ev.p1 - t.translation + Vec3::new(SHEET_WIDTH * 0.5, 0.0, SHEET_LENGTH * 0.5);
+    let p2 = ev.p2 - t.translation + Vec3::new(SHEET_WIDTH * 0.5, 0.0, SHEET_LENGTH * 0.5);
 
-    let x = v % CELL_WIDTH;
-    let y = (v / CELL_WIDTH) as usize;
-    let h = STONE_RADIUS * 0.5 * if up { 1.0 } else { -1.0 };
+    let Some((c1x, c1y)) = height_map.get_cell_from_pos(p1.x, p1.z) else { return; };
+    let Some((c2x, c2y)) = height_map.get_cell_from_pos(p2.x, p2.z) else { return; };
 
-    add_height(x, y, h, &mut *height_map, &mut *vert_pos);
-    let ns = get_neighbours(x, y);
+
+    let h = STONE_RADIUS * 0.1 * if up { 1.0 } else { -1.0 };
+
+    add_height(c1x, c1y, h, &mut *height_map, &mut *vert_pos);
+    let ns = get_neighbours(c1x, c1y);
     for (x, y) in ns {
         add_height(x, y, h /2.0, &mut *height_map, &mut *vert_pos);
+        let ns = get_neighbours(x, y);
+        for (x, y) in ns {
+            add_height(x, y, h /4.0, &mut *height_map, &mut *vert_pos);
+        }
+    }
+    if c1x != c2x || c1y != c2y {
+        add_height(c2x, c2y, h, &mut *height_map, &mut *vert_pos);
+        let ns = get_neighbours(c2x, c2y);
+        for (x, y) in ns {
+            add_height(x, y, h /2.0, &mut *height_map, &mut *vert_pos);
+            let ns = get_neighbours(x, y);
+            for (x, y) in ns {
+                add_height(x, y, h /4.0, &mut *height_map, &mut *vert_pos);
+            }
+
+        }
     }
 
     mesh.compute_normals();

@@ -62,7 +62,8 @@ fn setup_aim(
 
 #[derive(Default)]
 struct LastMouse {
-    idx: usize
+    idx: usize,
+    pos: Vec3,
 }
 
 fn terrain_mouse(
@@ -99,8 +100,12 @@ fn terrain_mouse(
     let hits = ray_cast.cast_ray(ray, &settings);
     for (_e, rmh) in hits.iter() {
         if let Some(idx) = rmh.triangle_index {
+            let dist = rmh.point.xz().distance(last_mouse.pos.xz());
+            if dist > 1.0 {
+                commands.trigger(TerrainSculpt { up: is_shift, idx, p1: last_mouse.pos, p2: rmh.point });
+                last_mouse.pos = rmh.point;
+            }
             if idx != last_mouse.idx {
-                commands.trigger(TerrainSculpt { up: is_shift, idx });
                 last_mouse.idx = idx;
             }
         }
