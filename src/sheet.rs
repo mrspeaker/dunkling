@@ -200,11 +200,12 @@ fn setup(
     });
     */
 
-    let mat = StandardMaterial {
+/*    let mat = StandardMaterial {
         base_color: Color::linear_rgb(0.36,0.7, 0.219),
         perceptual_roughness: 0.5,
         ..default()
-    };
+};*/
+    let mat = Color::WHITE;
 
     commands.spawn((
         OnGameScreen,
@@ -343,8 +344,10 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
+
+    /*
     let mut rng = rand::thread_rng();
-    /*for _ in 0..1000 {
+        for _ in 0..1000 {
         let x = rng.gen_range(0..CELL_WIDTH-1);
         let y = rng.gen_range(0..CELL_LENGTH-1);
         let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
@@ -354,24 +357,50 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
         for (x, y) in ns {
             set_height(x, y, h /2.0, map, vert_pos);
         }
-}*/
+    }*/
 
     let perlin = PerlinNoise::new();
 
     let mut max = -9999.0;
     let mut min = 9999.0;
+    const TERRAIN_HEIGHT: f32 = 50.0;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
             let mut h = perlin.get3d([x as f64 / 10.0, y as f64 / 10.0, 0.0]);
             h = h.max(0.5) - 0.5;
-            set_height(x, y, h as f32 * 50.0, map, vert_pos);
+            set_height(x, y, h as f32 * TERRAIN_HEIGHT, map, vert_pos);
 
             if h < min { min = h; };
             if h > max { max = h; };
         }
     }
     dbg!(min, max);
+
+    let cols: Vec<[f32; 4]> = vert_pos
+        .iter()
+        .map(|[_, h, _]| {
+            let h = *h / TERRAIN_HEIGHT;
+            if h > 0.15 {
+                Color::WHITE.to_linear().to_f32_array()
+            } else if h > 0.01{
+                Color::srgb(0.5, 0.3, 0.1)
+                    .to_linear()
+                    .to_f32_array()
+            } else {
+                Color::srgb(0.1, 0.5, 0.0)
+                    .to_linear()
+                    .to_f32_array()
+            }
+        })
+        .collect();
+
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_COLOR,
+        cols,
+    );
+
     mesh.compute_normals();
+
 }
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
