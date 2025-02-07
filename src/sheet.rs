@@ -11,6 +11,7 @@ use bevy::{
     }
 };
 use perlin_noise::PerlinNoise;
+use std::f32::consts::*;
 
 use rand::prelude::*;
 
@@ -21,6 +22,7 @@ use crate::constants::{
     SHEET_LENGTH,
     SHEET_WIDTH,
     SHEET_PRE_AREA,
+    MAX_TERRAIN_HEIGHT
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -171,7 +173,7 @@ fn setup(
         .mesh()
         .size(SHEET_WIDTH, SHEET_LENGTH)
     );
-    terraform(&mut plane, &mut height_map);
+    terraform(&mut plane, &mut height_map, 0.1);
 
     commands.insert_resource(height_map);
 
@@ -223,6 +225,32 @@ fn setup(
         Sheet
     ));
 
+
+    let mut hm2 = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
+    let mut plane2 = build_plane(Plane3d::default()
+        .mesh()
+        .size(SHEET_WIDTH, SHEET_LENGTH)
+    );
+    terraform(&mut plane2, &mut hm2, 1.0);
+
+    commands.spawn((
+        OnGameScreen,
+        Mesh3d(meshes.add(plane2)),
+        RigidBody::Static,
+        Friction::new(10.0),
+        ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
+        CollisionMargin(0.05),
+        MeshMaterial3d(materials.add(mat)),
+        Transform::from_xyz(
+            0.0,
+            0.0,
+            SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) )
+            .with_rotation(Quat::from_rotation_x(-PI / 6.)),
+        //Wireframe,
+        Sheet
+    ));
+
+
     let mut rng = rand::thread_rng();
     for _ in 0..200 {
         let pos = Vec3::new(
@@ -266,8 +294,12 @@ pub fn terrain_sculpt(
     mut meshes: ResMut<Assets<Mesh>>,
     mut height_map: ResMut<HeightMap>,
     mut commands: Commands,
+
 ) {
-    let (e, mesh_handle, t) = mesh_query.get_single().expect("Query not successful");
+    let Ok((e, mesh_handle, t)) = mesh_query.get(trigger.entity()) else {
+        return;
+    };
+
     let mesh = meshes.get_mut(mesh_handle).unwrap();
     let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
@@ -337,7 +369,7 @@ fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
     return ns;
 }
 
-fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
+fn terraform(mesh: &mut Mesh, map: &mut HeightMap, ratio: f32) {
     let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     let VertexAttributeValues::Float32x3(vert_pos) = vert else {
@@ -363,12 +395,12 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
 
     let mut max = -9999.0;
     let mut min = 9999.0;
-    const TERRAIN_HEIGHT: f32 = 50.0;
+    let terrain_height = MAX_TERRAIN_HEIGHT * ratio;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
             let mut h = perlin.get3d([x as f64 / 10.0, y as f64 / 10.0, 0.0]);
             h = h.max(0.5) - 0.5;
-            set_height(x, y, h as f32 * TERRAIN_HEIGHT, map, vert_pos);
+            set_height(x, y, h as f32 * terrain_height, map, vert_pos);
 
             if h < min { min = h; };
             if h > max { max = h; };
@@ -379,15 +411,16 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap) {
     let cols: Vec<[f32; 4]> = vert_pos
         .iter()
         .map(|[_, h, _]| {
-            let h = *h / TERRAIN_HEIGHT;
-            if h > 0.15 {
+            let h = *h;// / terrain_height;
+            if h > 5.0 {
                 Color::WHITE.to_linear().to_f32_array()
-            } else if h > 0.01{
-                Color::srgb(0.5, 0.3, 0.1)
+            } else if h > 1.0{
+                Color::srgb(0.4, 0.4, 0.1)
                     .to_linear()
                     .to_f32_array()
             } else {
-                Color::srgb(0.1, 0.5, 0.0)
+                Color::linear_rgb(0.36,0.7, 0.219)
+                //Color::srgb(0.1, 0.5, 0.0)
                     .to_linear()
                     .to_f32_array()
             }

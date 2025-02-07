@@ -330,7 +330,7 @@ fn text_power(
 fn start_anims_on_load(
     trigger: Trigger<SceneInstanceReady>,
     thor: Query<Entity, With<BigThor>>,
-    mut players: Query<&mut AnimationPlayer>//, With<BigThor>>
+    mut players: Query<&mut AnimationPlayer> //, With<BigThor>>
 ) {
     let e = trigger.entity();
     let Ok(thor) = thor.get_single() else { return; };

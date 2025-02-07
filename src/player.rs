@@ -98,11 +98,14 @@ fn terrain_mouse(
     let settings = RayCastSettings::default()
         .with_filter(&filter);
     let hits = ray_cast.cast_ray(ray, &settings);
-    for (_e, rmh) in hits.iter() {
+    for (e, rmh) in hits.iter() {
         if let Some(idx) = rmh.triangle_index {
             let dist = rmh.point.xz().distance(last_mouse.pos.xz());
             if dist > 1.0 {
-                commands.trigger(TerrainSculpt { up: is_shift, idx, p1: last_mouse.pos, p2: rmh.point });
+                commands.trigger_targets(
+                    TerrainSculpt { up: is_shift, idx, p1: last_mouse.pos, p2: rmh.point },
+                    e.clone()
+                );
                 last_mouse.pos = rmh.point;
             }
             if idx != last_mouse.idx {
