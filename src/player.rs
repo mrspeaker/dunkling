@@ -13,6 +13,9 @@ use crate::constants::{
     STONE_RADIUS,
     SHEET_LENGTH,
     SHEET_PRE_AREA,
+    STONE_X,
+    STONE_Y,
+    STONE_Z, SHEET_WIDTH,
 };
 use crate::game::{GameState, GamePhase, OnGameScreen};
 
@@ -29,7 +32,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
             terrain_mouse,
-            stone_shoot,
+            stone_update,
             draw_sheet_intersections
         ).run_if(in_state(GamePhase::Sculpting)));
         app.add_systems(Update, (
@@ -51,7 +54,7 @@ fn setup_aim(
     commands.spawn((
         OnGameScreen,
         PowerBall,
-        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
+        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
@@ -78,11 +81,12 @@ fn terrain_mouse(
 ) {
     let is_left = buttons.pressed(MouseButton::Left);
     let is_right = buttons.pressed(MouseButton::Right);
+    let is_shift = keys.pressed(KeyCode::ShiftLeft);
 
-    if !(is_left || is_right) {
+    if is_shift || !(is_left || is_right) {
         return;
     }
-    let is_shift = is_right || keys.pressed(KeyCode::ShiftLeft);
+
 
     // Cursor to ray
     let (camera, camera_transform) = *camera_query;
@@ -103,7 +107,7 @@ fn terrain_mouse(
             let dist = rmh.point.xz().distance(last_mouse.pos.xz());
             if dist > 1.0 {
                 commands.trigger_targets(
-                    TerrainSculpt { up: is_shift, idx, p1: last_mouse.pos, p2: rmh.point },
+                    TerrainSculpt { up: is_right, idx, p1: last_mouse.pos, p2: rmh.point },
                     e.clone()
                 );
                 last_mouse.pos = rmh.point;
@@ -115,7 +119,7 @@ fn terrain_mouse(
     }
 }
 
-fn stone_shoot(
+fn stone_update(
     input: Res<ButtonInput<KeyCode>>,
     mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
     mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
@@ -136,11 +140,14 @@ fn stone_shoot(
         vel_vec.x -= power;
     }
 
+    // update spot light
     let Ok(mut spot_pos) = spotty.get_single_mut() else { return; };
     spot_pos.translation = stone_pos.translation + Vec3::new(1.0, STONE_RADIUS * 2.0, 1.0);
 
-    if stone_pos.translation.y < -STONE_RADIUS * 5.0 {
-        stone_pos.translation = Vec3::new(0.0, STONE_RADIUS, 1000.0);
+    let x_dist = stone_pos.translation.x.abs();
+    let y_dist = stone_pos.translation.y;
+    if x_dist > SHEET_WIDTH || y_dist < -STONE_RADIUS * 12.0 {
+        stone_pos.translation = Vec3::new(STONE_X, STONE_Y, STONE_Z);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;
         vel_vec.z = 0.0;

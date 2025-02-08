@@ -10,6 +10,7 @@ features = ["jpeg"]
 [dependencies]
 avian3d = { git = "https://github.com/Jondolf/avian", branch = "main" }
 bevy_atmosphere = "0.12.2"
+bevy_panorbit_camera = "0.22.1"
 console_error_panic_hook = "0.1.7"
 perlin_noise = "1.0.1"
 rand = "0.8.5"

@@ -12,7 +12,10 @@ use crate::constants::{
     SHEET_PRE_AREA,
     STONE_RADIUS,
     STONE_DAMPENING,
-    STONE_MAX_VEL
+    STONE_MAX_VEL,
+    STONE_X,
+    STONE_Y,
+    STONE_Z,
 };
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
@@ -121,7 +124,7 @@ fn setup(
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -SHEET_LENGTH + SHEET_PRE_AREA),
+        Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
     ));
 
     // Light
@@ -140,7 +143,7 @@ fn setup(
 
     // Thor
     let texture_handle = asset_server.load("thor.png");
-    let aspect = 1.0;//0.25;
+    let aspect = 2.0;//0.25;
     let quad_width = STONE_RADIUS * 10.0;
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
@@ -172,7 +175,7 @@ fn setup(
 
     commands.spawn((
         DirectionalLight {
-            illuminance: light_consts::lux::OVERCAST_DAY,
+            illuminance: light_consts::lux::CLEAR_SUNRISE,
             shadows_enabled: true,
             ..default()
         },
@@ -299,6 +302,7 @@ fn on_hurl_stone(
 ) {
     let Ok(mut vel) = stone.get_single_mut() else { return; };
     vel.z = trigger.event().power * 100.0;
+    vel.y = -100.0;
     info!("power: {}", vel.z);
     phase.set(GamePhase::Sculpting);
 }

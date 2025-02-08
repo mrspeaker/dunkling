@@ -219,8 +219,9 @@ fn setup(
         MeshMaterial3d(materials.add(mat)), //material_handle),//mat)),
         Transform::from_xyz(
             0.0,
-            0.0,
-            -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
+            -2.0,
+            -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) )
+            .with_rotation(Quat::from_rotation_x(0.2)),
         //Wireframe,
         Sheet
     ));
@@ -243,16 +244,15 @@ fn setup(
         MeshMaterial3d(materials.add(mat)),
         Transform::from_xyz(
             0.0,
-            0.0,
-            SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) )
-            .with_rotation(Quat::from_rotation_x(-PI / 6.)),
+            -100.0,
+            SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
         //Wireframe,
         Sheet
     ));
 
 
     let mut rng = rand::thread_rng();
-    for _ in 0..200 {
+    for _ in 0..10 {
         let pos = Vec3::new(
             rng.gen_range((-SHEET_WIDTH / 4.0)..(SHEET_WIDTH/ 4.0)),
             0.0,
@@ -343,7 +343,6 @@ pub fn terrain_sculpt(
     }
 
     mesh.compute_normals();
-
     commands.entity(e).remove::<Collider>();
     commands.entity(e).insert(ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES));
 
