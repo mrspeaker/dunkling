@@ -18,10 +18,8 @@ impl Plugin for CameraPlugin {
         app.add_plugins(AtmospherePlugin);
         app.add_plugins(PanOrbitCameraPlugin);
 
-
         app.add_systems(OnEnter(GameState::InGame), add_atmos);
         app.add_systems(OnExit(GameState::InGame), remove_atmos);
-
     }
 }
 

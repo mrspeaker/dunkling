@@ -30,13 +30,57 @@ use crate::game::{GameState, OnGameScreen};
 #[derive(Component)]
 pub struct Sheet;
 
-
 #[derive(Debug, Event)]
 pub struct TerrainSculpt {
     pub up: bool,
     pub idx: usize,
     pub p1: Vec3,
     pub p2: Vec3,
+}
+
+
+struct SpawnTerrain(IVec2);
+
+impl Command for SpawnTerrain {
+    fn apply(self, world: &mut World) {
+
+        let mut hm2 = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
+
+        let mut plane2 = build_plane(Plane3d::default()
+                                     .mesh()
+                                     .size(SHEET_WIDTH, SHEET_LENGTH)
+        );
+        terraform(&mut plane2, &mut hm2, 1.0);
+
+        let mesh = world
+            .get_resource_mut::<Assets<Mesh>>()
+            .expect("mesh Assets to be exist")
+            .add(plane2);
+
+        let mat = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .expect("StandardMaterial Assets to exist")
+            .add(Color::WHITE);
+
+        world.spawn((
+            OnGameScreen,
+            Mesh3d(mesh),
+            RigidBody::Static,
+            Friction::new(10.0),
+            ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
+            CollisionMargin(0.05),
+            MeshMaterial3d(mat),
+            Transform::from_xyz(
+                self.0.x as f32 * SHEET_WIDTH,
+                0.,
+                self.0.y as f32 * SHEET_LENGTH,
+            ),
+            //Wireframe,
+            Sheet
+        ));
+
+
+    }
 }
 
 #[derive(Resource, Clone, Debug)]
@@ -160,13 +204,6 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // end line
-    commands.spawn((
-        OnGameScreen,
-        Mesh3d(meshes.add(Cuboid::new(STONE_RADIUS * 10.0, 0.1, STONE_RADIUS * 0.5))),
-        MeshMaterial3d(materials.add(Color::BLACK)),
-    ));
-
     let mut height_map = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
 
     let mut plane = build_plane(Plane3d::default()
@@ -226,30 +263,9 @@ fn setup(
         Sheet
     ));
 
-
-    let mut hm2 = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
-    let mut plane2 = build_plane(Plane3d::default()
-        .mesh()
-        .size(SHEET_WIDTH, SHEET_LENGTH)
-    );
-    terraform(&mut plane2, &mut hm2, 1.0);
-
-    commands.spawn((
-        OnGameScreen,
-        Mesh3d(meshes.add(plane2)),
-        RigidBody::Static,
-        Friction::new(10.0),
-        ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
-        CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(mat)),
-        Transform::from_xyz(
-            0.0,
-            -100.0,
-            SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) ),
-        //Wireframe,
-        Sheet
-    ));
-
+    commands.queue(SpawnTerrain(IVec2::new(0, 0)));
+    commands.queue(SpawnTerrain(IVec2::new(-1, 0)));
+    commands.queue(SpawnTerrain(IVec2::new(0, 1)));
 
     let mut rng = rand::thread_rng();
     for _ in 0..10 {
@@ -411,7 +427,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, ratio: f32) {
         .iter()
         .map(|[_, h, _]| {
             let h = *h;// / terrain_height;
-            if h > 5.0 {
+            if h > 7.0 {
                 Color::WHITE.to_linear().to_f32_array()
             } else if h > 1.0{
                 Color::srgb(0.4, 0.4, 0.1)

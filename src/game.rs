@@ -243,8 +243,8 @@ fn setup(
             SceneRoot(
                 asset_server
                     .load(GltfAssetLabel::Scene(0).from_asset(BIG_THOR_PATH))),
-            Transform::from_xyz(0.0, 0.0, -SHEET_LENGTH + SHEET_PRE_AREA)
-                .with_scale(Vec3::splat(22.0))
+            Transform::from_xyz(0.0, 92.0, -SHEET_LENGTH + SHEET_PRE_AREA)
+                .with_scale(Vec3::splat(25.0))
         ));
 
 
