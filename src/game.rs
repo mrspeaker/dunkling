@@ -156,7 +156,7 @@ fn setup(
     commands.spawn((
         Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width * aspect))),
         MeshMaterial3d(material_handle),
-        Transform::from_xyz(STONE_RADIUS * 2.0, 1.0, STONE_RADIUS * 3.0)
+        Transform::from_xyz(200.0, 1.0, 2000.0)
             .with_rotation(Quat::from_euler(
                 // YXZ = "yaw"/"pitch"/"roll"
                 EulerRot::YXZ,

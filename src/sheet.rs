@@ -119,6 +119,7 @@ impl HeightMap {
 
         // Check if cell position is out of map bounds
         if cell_x >= self.cell_w || cell_y >= self.cell_h {
+            dbg!(cell_x, self.cell_w, cell_y, self.cell_h);
             None // out of bound
         } else {
             Some((cell_x, cell_y))
@@ -141,7 +142,7 @@ impl HeightMap {
     }
 
     /// Bilinear interpolation to get height
-    pub fn get_height_at_pos(&self, x: f32, y:f32) -> Option<f32> {
+    fn get_height_at_pos(&self, x: f32, y:f32) -> Option<f32> {
         // A-----B
         // |--x,y|
         // |  |  |
@@ -269,6 +270,8 @@ fn setup(
     commands.queue(SpawnTerrain{ pos: IVec2::new(0, 2), bumpiness: 0.8 });
     commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
     commands.queue(SpawnTerrain{ pos: IVec2::new(0, 3), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 4), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 5), bumpiness: 1.0 });
 
     let mut rng = rand::thread_rng();
     for _ in 0..10 {
@@ -300,6 +303,10 @@ fn set_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, 
 
 fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
     let map = &mut height_map.map;
+    if hm_x >= height_map.cell_w ||
+        hm_y >= height_map.cell_h {
+           return;
+        }
     let cur = (*map)[hm_y][hm_x];
     let next = (cur + value).max(0.0);
     (*map)[hm_y][hm_x] = next;
