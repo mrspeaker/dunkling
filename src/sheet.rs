@@ -38,8 +38,10 @@ pub struct TerrainSculpt {
     pub p2: Vec3,
 }
 
-
-struct SpawnTerrain(IVec2);
+struct SpawnTerrain {
+    pos: IVec2,
+    bumpiness: f32,
+}
 
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
@@ -50,7 +52,7 @@ impl Command for SpawnTerrain {
                                      .mesh()
                                      .size(SHEET_WIDTH, SHEET_LENGTH)
         );
-        terraform(&mut plane2, &mut hm2, 1.0);
+        terraform(&mut plane2, &mut hm2, self.bumpiness);
 
         let mesh = world
             .get_resource_mut::<Assets<Mesh>>()
@@ -71,15 +73,13 @@ impl Command for SpawnTerrain {
             CollisionMargin(0.05),
             MeshMaterial3d(mat),
             Transform::from_xyz(
-                self.0.x as f32 * SHEET_WIDTH,
+                self.pos.x as f32 * SHEET_WIDTH,
                 0.,
-                self.0.y as f32 * SHEET_LENGTH,
+                self.pos.y as f32 * SHEET_LENGTH,
             ),
             //Wireframe,
             Sheet
         ));
-
-
     }
 }
 
@@ -253,7 +253,7 @@ fn setup(
         Friction::new(10.0),
         ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(mat)), //material_handle),//mat)),
+        MeshMaterial3d(materials.add(mat)),
         Transform::from_xyz(
             0.0,
             -2.0,
@@ -263,9 +263,12 @@ fn setup(
         Sheet
     ));
 
-    commands.queue(SpawnTerrain(IVec2::new(0, 0)));
-    commands.queue(SpawnTerrain(IVec2::new(-1, 0)));
-    commands.queue(SpawnTerrain(IVec2::new(0, 1)));
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 0), bumpiness: 0.2 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(-1, 0), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 1), bumpiness: 0.3 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 2), bumpiness: 0.8 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 3), bumpiness: 1.0 });
 
     let mut rng = rand::thread_rng();
     for _ in 0..10 {
@@ -302,7 +305,6 @@ fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, 
     (*map)[hm_y][hm_x] = next;
     verts[hm_y * CELL_WIDTH + hm_x][1] = next;
 }
-
 
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
