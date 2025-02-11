@@ -271,7 +271,7 @@ fn setup(
     commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
     commands.queue(SpawnTerrain{ pos: IVec2::new(0, 3), bumpiness: 1.0 });
     commands.queue(SpawnTerrain{ pos: IVec2::new(0, 4), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 5), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 5), bumpiness: 0.0 });
 
     let mut rng = rand::thread_rng();
     for _ in 0..10 {
