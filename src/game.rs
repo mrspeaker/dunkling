@@ -228,11 +228,11 @@ fn setup(
         ));
 
     const BIG_THOR_PATH: &str = "models/mano.glb";
-    let (graph, node_indices) = AnimationGraph::from_clips([
-        asset_server.load(GltfAssetLabel::Animation(0).from_asset(BIG_THOR_PATH)),
-    ]);
-    dbg!(graph.clone(), node_indices);
-    graphs.add(graph);
+    // let (graph, node_indices) = AnimationGraph::from_clips([
+    //     asset_server.load(GltfAssetLabel::Animation(0).from_asset(BIG_THOR_PATH)),
+    // ]);
+    // dbg!(graph.clone(), node_indices);
+    // graphs.add(graph);
 
 
     commands

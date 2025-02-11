@@ -194,8 +194,6 @@ fn aim_mouse(
     for ev in motion.read() {
         aim.angle += ev.delta.x / 300.0;
         thor.get_single_mut().ok().map(|mut th| { th.rotation.y = aim.angle; });
-
-        println!("Mouse moved: X: {} px, rot: {}", ev.delta.x, aim.angle);
     }
 
     if buttons.just_pressed(MouseButton::Left) {
