@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 
+use bevy::input::mouse::MouseMotion;
 use bevy::{
     prelude::*,
     color::palettes::tailwind::*,
@@ -7,7 +8,7 @@ use bevy::{
 };
 
 use crate::sheet::{Sheet, TerrainSculpt};
-use crate::game::{Stone, Spotty};
+use crate::game::{Stone, Spotty, BigThor};
 
 use crate::constants::{
     STONE_RADIUS,
@@ -24,6 +25,7 @@ const INIT_X:f32 = STONE_RADIUS * 10.0;
 #[derive(Debug, Event)]
 pub struct HurlStone {
     pub power: f32,
+    pub angle: f32,
 }
 
 pub struct PlayerPlugin;
@@ -171,13 +173,16 @@ struct Aiming {
     fired: bool,
     power_up: bool,
     power: f32,
+    angle: f32
 }
 
 fn aim_mouse(
     buttons: Res<ButtonInput<MouseButton>>,
+    mut motion: EventReader<MouseMotion>,
     mut aim: Local<Aiming>,
     time: Res<Time>,
     mut powerball: Query<&mut Transform, With<PowerBall>>,
+    mut thor: Query<&mut Transform, (With<BigThor>, Without<PowerBall>)>,
     mut commands: Commands
 ) {
     if aim.fired {
@@ -185,6 +190,13 @@ fn aim_mouse(
     }
 
     let Ok(mut t) = powerball.get_single_mut() else { return; };
+
+    for ev in motion.read() {
+        aim.angle += ev.delta.x / 300.0;
+        thor.get_single_mut().ok().map(|mut th| { th.rotation.y = aim.angle; });
+
+        println!("Mouse moved: X: {} px, rot: {}", ev.delta.x, aim.angle);
+    }
 
     if buttons.just_pressed(MouseButton::Left) {
         aim.power_up = true;
@@ -198,7 +210,7 @@ fn aim_mouse(
     if aim.power_up && buttons.just_released(MouseButton::Left) {
         if aim.power > 1.0 {
             // trigger fire!
-            commands.trigger(HurlStone { power: aim.power });
+            commands.trigger(HurlStone { power: aim.power, angle: aim.angle });
         }
         aim.power_up = false;
         aim.power = 0.0;

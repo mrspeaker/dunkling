@@ -79,15 +79,11 @@ pub fn cam_track(
 
 
 pub fn cam_track_orbit(
-    //time: Res<Time>,
     stone: Query<&Transform, With<Stone>>,
-    mut camera: Query<(&Transform, &mut PanOrbitCamera)>,
+    mut camera: Query<&mut PanOrbitCamera>,
 ){
-    //let dt = time.delta_secs();
     let Ok(stone_pos) = stone.get_single() else { return; };
-
-    let Ok((t, mut camera)) = camera.get_single_mut() else { return; };
-
+    let Ok(mut camera) = camera.get_single_mut() else { return; };
     camera.target_focus = stone_pos.translation;
     camera.force_update = true;
 }
