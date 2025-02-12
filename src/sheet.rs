@@ -82,6 +82,23 @@ impl Command for SpawnTerrain {
         if self.pos.y != 5 {
             ent.insert(Sheet);
         }
+
+        world.spawn((
+            OnGameScreen,
+           // Mesh3d(meshes.add(Cuboid::default())),
+            RigidBody::Static,
+            ColliderConstructor::Cuboid {
+                x_length: SHEET_WIDTH,
+                y_length: 50.0,
+                z_length: SHEET_LENGTH
+            },
+            Transform::from_xyz(
+                self.pos.x as f32 * SHEET_WIDTH,
+                -25.0,
+                self.pos.y as f32 * SHEET_LENGTH,
+            ),
+        ));
+
     }
 }
 

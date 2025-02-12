@@ -66,7 +66,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins((
             MeshPickingPlugin,
-            // PhysicsDebugPlugin::default(),
+            //PhysicsDebugPlugin::default(),
             PhysicsPlugins::default()));
         app.add_plugins(splash_plugin);
         app.add_plugins(CameraPlugin);
