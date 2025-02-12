@@ -64,7 +64,7 @@ impl Command for SpawnTerrain {
             .expect("StandardMaterial Assets to exist")
             .add(Color::WHITE);
 
-        world.spawn((
+        let mut ent = world.spawn((
             OnGameScreen,
             Mesh3d(mesh),
             RigidBody::Static,
@@ -78,8 +78,10 @@ impl Command for SpawnTerrain {
                 self.pos.y as f32 * SHEET_LENGTH,
             ),
             //Wireframe,
-            Sheet
         ));
+        if self.pos.y != 5 {
+            ent.insert(Sheet);
+        }
     }
 }
 
