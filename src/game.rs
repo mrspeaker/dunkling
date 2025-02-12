@@ -315,7 +315,7 @@ fn on_hurl_stone(
     mut stone: Query<&mut LinearVelocity, With<Stone>>
 ) {
     let Ok(mut vel) = stone.get_single_mut() else { return; };
-    vel.x = trigger.event().angle * 100.0;
+    vel.x = trigger.event().angle * 200.0;
     vel.z = trigger.event().power * 100.0;
     vel.y = -100.0;
     info!("power: {} angle: {}", vel.z, vel.x);

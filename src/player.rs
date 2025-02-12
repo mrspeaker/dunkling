@@ -178,7 +178,7 @@ struct Aiming {
 
 fn aim_mouse(
     buttons: Res<ButtonInput<MouseButton>>,
-    mut motion: EventReader<MouseMotion>,
+    windows: Query<&Window>,
     mut aim: Local<Aiming>,
     time: Res<Time>,
     mut powerball: Query<&mut Transform, With<PowerBall>>,
@@ -191,10 +191,17 @@ fn aim_mouse(
 
     let Ok(mut t) = powerball.get_single_mut() else { return; };
 
-    for ev in motion.read() {
-        aim.angle += ev.delta.x / 300.0;
-        thor.get_single_mut().ok().map(|mut th| { th.rotation.y = aim.angle; });
-    }
+    // Rotate angle based on cursor position
+    let window = windows.single();
+    window
+        .cursor_position()
+        .map(|v| { v / window.size() })
+        .and_then(|pos| {
+            aim.angle = pos.x - 0.5;
+            thor.get_single_mut().ok().map(|mut th| {
+                th.rotation.y = aim.angle;
+            })
+        });
 
     if buttons.just_pressed(MouseButton::Left) {
         aim.power_up = true;
