@@ -8,14 +8,7 @@ use bevy::{
 use std::f32::consts::*;
 
 use crate::constants::{
-    SHEET_LENGTH,
-    SHEET_PRE_AREA,
-    STONE_RADIUS,
-    STONE_DAMPENING,
-    STONE_MAX_VEL,
-    STONE_X,
-    STONE_Y,
-    STONE_Z, SHEET_WIDTH,
+    SHEET_LENGTH, SHEET_PRE_AREA, SHEET_WIDTH, STONE_DAMPENING, STONE_MAX_VEL, STONE_RADIUS, STONE_STOP_VEL, STONE_X, STONE_Y, STONE_Z
 };
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
@@ -131,8 +124,8 @@ fn setup(
     commands.spawn((
         PointLight {
             intensity: 10_000_000.0,
-            range: 100.0,
-            radius: 100.0,
+            range: 3000.0,
+            radius: 3000.0,
             color: BLUE.into(),
             shadows_enabled: true,
             ..default()
@@ -191,7 +184,7 @@ fn setup(
     // Lights
     commands.insert_resource(AmbientLight {
         color: Color::linear_rgb(1.0,1.0, 1.0),
-        brightness: 200.0,
+        brightness: 1000.0,
     });
 
     commands.spawn((
@@ -201,15 +194,15 @@ fn setup(
             ..default()
         },
         Transform {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            rotation: Quat::from_rotation_x(-PI / 1.3),
+            translation: Vec3::new(0.0, 0.0, 1000.0),
+            rotation: Quat::from_rotation_x(PI),// / 1.2),
             ..default()
         },
         OnGameScreen
     ));
 
     commands.insert_resource(
-        SplashTimer(Timer::from_seconds(15.0, TimerMode::Once))
+        SplashTimer(Timer::from_seconds(25.0, TimerMode::Once))
     );
 
     commands.spawn((
@@ -310,7 +303,7 @@ fn track_stone(
     let Ok(vel) = stone.get_single() else { return; };
     //dbg!(vel.length());
 
-    if vel.length() < 2.0 {
+    if vel.length() < STONE_STOP_VEL {
         state.set(GameState::Splash);
     }
 

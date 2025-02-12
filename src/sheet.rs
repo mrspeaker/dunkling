@@ -1,7 +1,7 @@
 use avian3d::prelude::*;
 use bevy::{
-    //image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
-    //math::Affine2,
+    image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
+    math::Affine2,
     prelude::*,
 //    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
@@ -16,13 +16,7 @@ use std::f32::consts::*;
 use rand::prelude::*;
 
 use crate::constants::{
-    STONE_RADIUS,
-    CELL_WIDTH,
-    CELL_LENGTH,
-    SHEET_LENGTH,
-    SHEET_WIDTH,
-    SHEET_PRE_AREA,
-    MAX_TERRAIN_HEIGHT
+    CELL_LENGTH, CELL_WIDTH, MAX_TERRAIN_HEIGHT, SHEET_LENGTH, SHEET_PRE_AREA, SHEET_RATIO, SHEET_WIDTH, STONE_RADIUS
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -234,7 +228,6 @@ fn setup(
 
     commands.insert_resource(height_map);
 
-    /*
     let texture_handle = asset_server.load_with_settings(
         "textures/Ground037_2K-JPG_Color.jpg",
         |s: &mut _| {
@@ -257,7 +250,6 @@ fn setup(
         uv_transform: Affine2::from_scale(Vec2::new(uv_x, uv_y)),
         ..default()
     });
-    */
 
 /*    let mat = StandardMaterial {
         base_color: Color::linear_rgb(0.36,0.7, 0.219),
@@ -273,7 +265,7 @@ fn setup(
         Friction::new(10.0),
         ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
         CollisionMargin(0.05),
-        MeshMaterial3d(materials.add(mat)),
+        MeshMaterial3d(material_handle),
         Transform::from_xyz(
             0.0,
             -2.0,
