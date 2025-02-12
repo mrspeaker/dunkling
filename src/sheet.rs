@@ -353,8 +353,7 @@ pub fn terrain_sculpt(
     let Some((c1x, c1y)) = height_map.get_cell_from_pos(p1.x, p1.z) else { return; };
     let Some((c2x, c2y)) = height_map.get_cell_from_pos(p2.x, p2.z) else { return; };
 
-
-    let h = STONE_RADIUS * 0.1 * if up { 1.0 } else { -1.0 };
+    let h = STONE_RADIUS * 0.1 * if up { 0.5 } else { -1.0 };
 
     add_height(c1x, c1y, h, &mut *height_map, &mut *vert_pos);
     let ns = get_neighbours(c1x, c1y);
@@ -377,6 +376,30 @@ pub fn terrain_sculpt(
 
         }
     }
+
+    let cols: Vec<[f32; 4]> = vert_pos
+        .iter()
+        .map(|[_, h, _]| {
+            let h = *h;// / terrain_height;
+            if h > 7.0 {
+                Color::WHITE.to_linear().to_f32_array()
+            } else if h > 1.0{
+                Color::srgb(0.4, 0.4, 0.1)
+                    .to_linear()
+                    .to_f32_array()
+            } else {
+                Color::linear_rgb(0.36,0.7, 0.219)
+                //Color::srgb(0.1, 0.5, 0.0)
+                    .to_linear()
+                    .to_f32_array()
+            }
+        })
+        .collect();
+
+    mesh.insert_attribute(
+        Mesh::ATTRIBUTE_COLOR,
+        cols,
+    );
 
     mesh.compute_normals();
     commands.entity(e).remove::<Collider>();
