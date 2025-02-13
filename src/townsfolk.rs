@@ -40,8 +40,8 @@ fn setup(
     for _ in 0..200 {
         let pos = Vec3::new(
             rng.gen_range(-w..w),
-            20.0,
-            -rng.gen_range(0.0..SHEET_TOTAL));
+            0.0,
+            rng.gen_range(0.0..SHEET_TOTAL));
         commands
             .spawn((
                 Name::new("Person1"),

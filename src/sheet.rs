@@ -317,7 +317,7 @@ fn setup(
         let pos = Vec3::new(
             rng.gen_range((-CHUNK_SIZE / 4.0)..(CHUNK_SIZE/ 4.0)),
             0.0,
-            rng.gen_range((-SHEET_TOTAL)..0.0)
+            rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE)
         );
 
         commands
