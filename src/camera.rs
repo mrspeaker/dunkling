@@ -41,7 +41,7 @@ fn setup(
     ));
 
     commands.insert_resource(AtmosphereSettings {
-        skybox_creation_mode: SkyboxCreationMode::FromSpecifiedFar(6000.0),
+        skybox_creation_mode: SkyboxCreationMode::FromSpecifiedFar(8000.0),
         ..default()
     });
 }

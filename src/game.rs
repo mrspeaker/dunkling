@@ -8,7 +8,16 @@ use bevy::{
 use std::f32::consts::*;
 
 use crate::constants::{
-    SHEET_LENGTH, SHEET_PRE_AREA, SHEET_WIDTH, STONE_DAMPENING, STONE_MAX_VEL, STONE_RADIUS, STONE_STOP_VEL, STONE_X, STONE_Y, STONE_Z
+    SHEET_PRE_AREA,
+    CHUNK_SIZE,
+    STONE_DAMPENING,
+    STONE_MAX_VEL,
+    STONE_RADIUS,
+    STONE_STOP_VEL,
+    STONE_X,
+    STONE_Y,
+    STONE_Z,
+    SHEET_TOTAL
 };
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
@@ -50,7 +59,6 @@ pub struct TextPower;
 
 #[derive(Component)]
 pub struct BigThor;
-
 
 #[derive(Resource, Deref, DerefMut)]
 struct GraphHandle(AnimationGraph);
@@ -160,7 +168,7 @@ fn setup(
         OnGameScreen
     ));
 
-    let quad_width = SHEET_WIDTH;
+    let quad_width = CHUNK_SIZE;
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(asset_server.load("target.png")),
         alpha_mode: AlphaMode::Blend,
@@ -169,7 +177,7 @@ fn setup(
     commands.spawn((
         Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width))),
         MeshMaterial3d(material_handle),
-        Transform::from_xyz(0.0, 0.5, SHEET_LENGTH * 5.0 + 250.0)
+        Transform::from_xyz(0.0, 0.5, SHEET_TOTAL + 250.0)
             .with_rotation(Quat::from_euler(
                 // YXZ = "yaw"/"pitch"/"roll"
                 EulerRot::YXZ,
@@ -195,7 +203,7 @@ fn setup(
         },
         Transform {
             translation: Vec3::new(0.0, 0.0, 1000.0),
-            rotation: Quat::from_rotation_x(PI),// / 1.2),
+            rotation: Quat::from_rotation_x(PI / 1.3),
             ..default()
         },
         OnGameScreen
@@ -257,7 +265,7 @@ fn setup(
             SceneRoot(
                 asset_server
                     .load(GltfAssetLabel::Scene(0).from_asset(BIG_THOR_PATH))),
-            Transform::from_xyz(0.0, 92.0, -SHEET_LENGTH + SHEET_PRE_AREA)
+            Transform::from_xyz(0.0, 92.0, -CHUNK_SIZE + SHEET_PRE_AREA)
                 .with_scale(Vec3::splat(25.0))
         ));
 
@@ -357,8 +365,8 @@ fn start_anims_on_load(
 
     info!("got bigthor");
 
-    for mut player in players.iter_mut() {
+    /*    for mut player in players.iter_mut() {
         info!("attempt to pla");
         player.play(1.into()).repeat();
-    }
+    }*/
 }

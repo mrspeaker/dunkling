@@ -4,8 +4,8 @@ use bevy::prelude::*;
 use rand::prelude::*;
 
 use crate::constants::{
-    SHEET_LENGTH,
-    SHEET_WIDTH,
+    SHEET_TOTAL,
+    CHUNK_SIZE,
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -36,12 +36,12 @@ fn setup(
 ) {
     // Lil people
     let mut rng = rand::thread_rng();
-    let w = SHEET_WIDTH / 2.0;
+    let w = CHUNK_SIZE / 2.0;
     for _ in 0..200 {
         let pos = Vec3::new(
             rng.gen_range(-w..w),
             20.0,
-            -rng.gen_range(0.0..SHEET_LENGTH));
+            -rng.gen_range(0.0..SHEET_TOTAL));
         commands
             .spawn((
                 Name::new("Person1"),

@@ -12,11 +12,10 @@ use crate::game::{Stone, Spotty, BigThor};
 
 use crate::constants::{
     STONE_RADIUS,
-    SHEET_LENGTH,
     SHEET_PRE_AREA,
     STONE_X,
     STONE_Y,
-    STONE_Z, SHEET_WIDTH,
+    STONE_Z, CHUNK_SIZE,
 };
 use crate::game::{GameState, GamePhase, OnGameScreen};
 
@@ -60,7 +59,7 @@ fn setup_aim(
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(INIT_X, STONE_RADIUS * 9.0, -SHEET_LENGTH + SHEET_PRE_AREA * 2.0),
+        Transform::from_xyz(INIT_X, STONE_RADIUS * 9.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
     ));
 
 }
@@ -148,7 +147,7 @@ fn stone_update(
 
     let x_dist = stone_pos.translation.x.abs();
     let y_dist = stone_pos.translation.y;
-    if x_dist > SHEET_WIDTH || y_dist < -STONE_RADIUS * 12.0 {
+    if x_dist > CHUNK_SIZE || y_dist < -STONE_RADIUS * 12.0 {
         stone_pos.translation = Vec3::new(STONE_X, STONE_Y, STONE_Z);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;

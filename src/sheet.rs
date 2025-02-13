@@ -16,7 +16,7 @@ use std::f32::consts::*;
 use rand::prelude::*;
 
 use crate::constants::{
-    CELL_LENGTH, CELL_WIDTH, MAX_TERRAIN_HEIGHT, SHEET_LENGTH, SHEET_PRE_AREA, SHEET_RATIO, SHEET_WIDTH, STONE_RADIUS
+    CELL_LENGTH, CELL_WIDTH, MAX_TERRAIN_HEIGHT, SHEET_PRE_AREA, SHEET_RATIO, CHUNK_SIZE, STONE_RADIUS, SHEET_TOTAL, NUM_CHUNKS
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -40,13 +40,16 @@ struct SpawnTerrain {
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
 
-        let mut hm2 = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
+        let mut hm2 = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_WIDTH, CELL_LENGTH);
 
         let mut plane2 = build_plane(Plane3d::default()
                                      .mesh()
-                                     .size(SHEET_WIDTH, SHEET_LENGTH)
+                                     .size(CHUNK_SIZE, CHUNK_SIZE)
         );
-        terraform(&mut plane2, &mut hm2, self.bumpiness);
+
+        let xo = self.pos.x * CELL_WIDTH as i32;
+        let yo = self.pos.y * CELL_LENGTH as i32;
+        terraform(&mut plane2, &mut hm2, xo, yo, self.bumpiness);
 
         let mesh = world
             .get_resource_mut::<Assets<Mesh>>()
@@ -67,9 +70,9 @@ impl Command for SpawnTerrain {
             CollisionMargin(0.05),
             MeshMaterial3d(mat),
             Transform::from_xyz(
-                self.pos.x as f32 * SHEET_WIDTH,
+                self.pos.x as f32 * CHUNK_SIZE,
                 0.,
-                self.pos.y as f32 * SHEET_LENGTH,
+                self.pos.y as f32 * CHUNK_SIZE,
             ),
             //Wireframe,
         ));
@@ -82,14 +85,14 @@ impl Command for SpawnTerrain {
            // Mesh3d(meshes.add(Cuboid::default())),
             RigidBody::Static,
             ColliderConstructor::Cuboid {
-                x_length: SHEET_WIDTH,
+                x_length: CHUNK_SIZE,
                 y_length: 50.0,
-                z_length: SHEET_LENGTH
+                z_length: CHUNK_SIZE
             },
             Transform::from_xyz(
-                self.pos.x as f32 * SHEET_WIDTH,
+                self.pos.x as f32 * CHUNK_SIZE,
                 -25.0,
-                self.pos.y as f32 * SHEET_LENGTH,
+                self.pos.y as f32 * CHUNK_SIZE,
             ),
         ));
 
@@ -218,13 +221,13 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let mut height_map = HeightMap::new(SHEET_WIDTH, SHEET_LENGTH, CELL_WIDTH, CELL_LENGTH);
+    let mut height_map = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_WIDTH, CELL_LENGTH);
 
     let mut plane = build_plane(Plane3d::default()
         .mesh()
-        .size(SHEET_WIDTH, SHEET_LENGTH)
+        .size(CHUNK_SIZE, CHUNK_SIZE)
     );
-    terraform(&mut plane, &mut height_map, 0.1);
+    terraform(&mut plane, &mut height_map, 0, 0, 0.1);
 
     commands.insert_resource(height_map);
 
@@ -269,27 +272,25 @@ fn setup(
         Transform::from_xyz(
             0.0,
             -2.0,
-            -SHEET_LENGTH / 2.0 + (SHEET_PRE_AREA / 2.0) )
+            -CHUNK_SIZE / 2.0 + (SHEET_PRE_AREA / 2.0) )
             .with_rotation(Quat::from_rotation_x(0.2)),
         //Wireframe,
         Sheet
     ));
 
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 0), bumpiness: 0.2 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(-1, 0), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 1), bumpiness: 0.3 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 2), bumpiness: 0.8 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
     commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 3), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 4), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(0, 5), bumpiness: 0.0 });
+
+    for i in 0..NUM_CHUNKS {
+        commands.queue(SpawnTerrain{ pos: IVec2::new(0, i), bumpiness: i as f32 / NUM_CHUNKS as f32 });
+    }
 
     let mut rng = rand::thread_rng();
-    for _ in 0..10 {
+    for _ in 0..100 {
         let pos = Vec3::new(
-            rng.gen_range((-SHEET_WIDTH / 4.0)..(SHEET_WIDTH/ 4.0)),
+            rng.gen_range((-CHUNK_SIZE / 4.0)..(CHUNK_SIZE/ 4.0)),
             0.0,
-            rng.gen_range((-SHEET_LENGTH)..0.0)
+            rng.gen_range((-SHEET_TOTAL)..0.0)
         );
 
         commands
@@ -347,8 +348,8 @@ pub fn terrain_sculpt(
     let up = ev.up;
     let v = ev.idx;
     // Get sheet position from world position
-    let p1 = ev.p1 - t.translation + Vec3::new(SHEET_WIDTH * 0.5, 0.0, SHEET_LENGTH * 0.5);
-    let p2 = ev.p2 - t.translation + Vec3::new(SHEET_WIDTH * 0.5, 0.0, SHEET_LENGTH * 0.5);
+    let p1 = ev.p1 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
+    let p2 = ev.p2 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
 
     let Some((c1x, c1y)) = height_map.get_cell_from_pos(p1.x, p1.z) else { return; };
     let Some((c2x, c2y)) = height_map.get_cell_from_pos(p2.x, p2.z) else { return; };
@@ -427,36 +428,29 @@ fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
     return ns;
 }
 
-fn terraform(mesh: &mut Mesh, map: &mut HeightMap, ratio: f32) {
+fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32) {
+
     let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     let VertexAttributeValues::Float32x3(vert_pos) = vert else {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
-
-    /*
-    let mut rng = rand::thread_rng();
-        for _ in 0..1000 {
-        let x = rng.gen_range(0..CELL_WIDTH-1);
-        let y = rng.gen_range(0..CELL_LENGTH-1);
-        let h = rng.gen_range(1.0..STONE_RADIUS*0.8);
-        set_height(x, y, h, map, vert_pos);
-
-        let ns = get_neighbours(x, y);
-        for (x, y) in ns {
-            set_height(x, y, h /2.0, map, vert_pos);
-        }
-    }*/
-
     let perlin = PerlinNoise::new();
+
+            dbg!(xo, yo);
 
     let mut max = -9999.0;
     let mut min = 9999.0;
     let terrain_height = MAX_TERRAIN_HEIGHT * ratio;
+    let size = 15.0;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
-            let mut h = perlin.get3d([x as f64 / 10.0, y as f64 / 10.0, 0.0]);
+            let mut h = perlin.get3d([
+                ((x as i32 + xo) as f64) / size,
+                ((y as i32 + yo) as f64) / size,
+                0.0,
+            ]);
             h = h.max(0.5) - 0.5;
             set_height(x, y, h as f32 * terrain_height, map, vert_pos);
 
