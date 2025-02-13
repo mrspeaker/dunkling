@@ -82,12 +82,14 @@ impl Plugin for GamePlugin {
         app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
 
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
+        app.add_systems(OnEnter(GamePhase::EndGame), on_game_over);
         app.add_systems(
             Update,
             (
                 track_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
-                text_power
+                text_power,
+                gameover_update.run_if(in_state(GamePhase::EndGame)),
             ));
 
         app.add_observer(on_hurl_stone);
@@ -284,14 +286,14 @@ struct StoneStats {
 
 fn track_stone(
     stone: Query<&LinearVelocity, With<Stone>>,
-    mut state: ResMut<NextState<GameState>>,
+    mut phase: ResMut<NextState<GamePhase>>,
     mut stone_stats: Local<StoneStats>,
 ){
     let Ok(vel) = stone.get_single() else { return; };
     //dbg!(vel.length());
 
     if vel.length() < STONE_STOP_VEL {
-        state.set(GameState::Splash);
+        phase.set(GamePhase::EndGame);
     }
 
 }
@@ -348,4 +350,14 @@ fn start_anims_on_load(
         info!("attempt to pla");
         player.play(1.into()).repeat();
     }*/
+}
+
+fn on_game_over() {
+    info!("game over...");
+}
+fn gameover_update(
+    mut state: ResMut<NextState<GameState>>,
+) {
+    state.set(GameState::Splash);
+
 }
