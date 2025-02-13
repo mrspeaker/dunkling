@@ -171,7 +171,7 @@ fn setup(
     // Lights
     commands.insert_resource(AmbientLight {
         color: Color::linear_rgb(1.0,1.0, 1.0),
-        brightness: 1000.0,
+        brightness: 500.0,
     });
 
     commands.spawn((
@@ -181,8 +181,8 @@ fn setup(
             ..default()
         },
         Transform {
-            translation: Vec3::new(0.0, 0.0, 1000.0),
-            rotation: Quat::from_rotation_x(PI / 1.3),
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Quat::from_rotation_x(-PI / 2.0 -0.4),
             ..default()
         },
         OnGameScreen

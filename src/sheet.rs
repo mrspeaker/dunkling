@@ -80,10 +80,11 @@ impl Command for SpawnTerrain {
             ent.insert(Sheet);
         }
 
+        // Stop from falling through ground
         world.spawn((
             OnGameScreen,
-           // Mesh3d(meshes.add(Cuboid::default())),
             RigidBody::Static,
+            Friction::new(10.0),
             ColliderConstructor::Cuboid {
                 x_length: CHUNK_SIZE,
                 y_length: 50.0,

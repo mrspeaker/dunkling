@@ -1,0 +1,14 @@
+* TODO
+** Figure out coordinates for realsy
+- match coords to verts
+** Fix terrain joining
+- probably depends on figuring out coords
+** Score display when boulder stops
+** Allow early restart
+** Refix initial angled chunks
+- maybe replace with mountain model
+** Steer boulder
+- all click on edge as it rotates to steer
+  - only in air? ground too?
+** Somehow slow down faster at end
+
