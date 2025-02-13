@@ -168,27 +168,6 @@ fn setup(
         OnGameScreen
     ));
 
-    let quad_width = CHUNK_SIZE;
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(asset_server.load("target.png")),
-        alpha_mode: AlphaMode::Blend,
-        ..default()
-    });
-    commands.spawn((
-        Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width))),
-        MeshMaterial3d(material_handle),
-        Transform::from_xyz(0.0, 0.5, SHEET_TOTAL + 250.0)
-            .with_rotation(Quat::from_euler(
-                // YXZ = "yaw"/"pitch"/"roll"
-                EulerRot::YXZ,
-                (180.0_f32).to_radians(),
-                (-90.0_f32).to_radians(),
-                (0.0_f32).to_radians(),
-            )),
-        OnGameScreen
-    ));
-
-
     // Lights
     commands.insert_resource(AmbientLight {
         color: Color::linear_rgb(1.0,1.0, 1.0),

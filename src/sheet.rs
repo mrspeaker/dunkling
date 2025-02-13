@@ -76,7 +76,7 @@ impl Command for SpawnTerrain {
             ),
             //Wireframe,
         ));
-        if self.pos.y != 5 {
+        if self.pos.y != NUM_CHUNKS - 1 {
             ent.insert(Sheet);
         }
 
@@ -282,8 +282,34 @@ fn setup(
     commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
 
     for i in 0..NUM_CHUNKS {
-        commands.queue(SpawnTerrain{ pos: IVec2::new(0, i), bumpiness: i as f32 / NUM_CHUNKS as f32 });
+        commands.queue(SpawnTerrain{
+            pos: IVec2::new(0, i),
+            bumpiness: if i == NUM_CHUNKS - 1 { 0.0 } else { i as f32 / NUM_CHUNKS as f32 }
+        });
     }
+
+    let quad_width = CHUNK_SIZE;
+    let material_handle = materials.add(StandardMaterial {
+        base_color_texture: Some(asset_server.load("target.png")),
+        alpha_mode: AlphaMode::Blend,
+        ..default()
+    });
+    commands.spawn((
+        Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width))),
+        MeshMaterial3d(material_handle),
+        Transform::from_xyz(0.0, 0.5, SHEET_TOTAL - CHUNK_SIZE)
+            .with_rotation(Quat::from_euler(
+                // YXZ = "yaw"/"pitch"/"roll"
+                EulerRot::YXZ,
+                (180.0_f32).to_radians(),
+                (-90.0_f32).to_radians(),
+                (0.0_f32).to_radians(),
+            )),
+        OnGameScreen
+    ));
+
+
+
 
     let mut rng = rand::thread_rng();
     for _ in 0..100 {
@@ -347,6 +373,7 @@ pub fn terrain_sculpt(
     let ev = trigger.event();
     let up = ev.up;
     let v = ev.idx;
+
     // Get sheet position from world position
     let p1 = ev.p1 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
     let p2 = ev.p2 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
@@ -438,12 +465,10 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32)
 
     let perlin = PerlinNoise::new();
 
-            dbg!(xo, yo);
-
     let mut max = -9999.0;
     let mut min = 9999.0;
     let terrain_height = MAX_TERRAIN_HEIGHT * ratio;
-    let size = 15.0;
+    let size = 10.0;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
             let mut h = perlin.get3d([

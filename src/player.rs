@@ -88,7 +88,6 @@ fn terrain_mouse(
         return;
     }
 
-
     // Cursor to ray
     let (camera, camera_transform) = *camera_query;
     let Some(cursor_position) = windows.cursor_position() else {
