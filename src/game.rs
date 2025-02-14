@@ -52,6 +52,32 @@ pub enum GamePhase {
     EndGame
 }
 
+#[derive(Component, Deref, DerefMut)]
+struct PhaseTimer {
+    #[deref]
+    timer: Timer,
+    state: Option<GameState>,
+    phase: Option<GamePhase>
+}
+
+impl PhaseTimer {
+    pub fn new_with_state(time: f32, state: GameState) -> Self {
+        Self {
+            timer: Timer::from_seconds(time, TimerMode::Once),
+            state: Some(state),
+            phase: None,
+        }
+    }
+
+    pub fn new_with_phase(time: f32, phase: GamePhase) -> Self {
+        Self {
+            timer: Timer::from_seconds(time, TimerMode::Once),
+            state: None,
+            phase: Some(phase),
+        }
+    }
+}
+
 #[derive(Component)]
 pub struct TextDistance;
 #[derive(Component)]
@@ -86,6 +112,7 @@ impl Plugin for GamePlugin {
         app.add_systems(
             Update,
             (
+                timers_downdown,
                 track_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
                 text_power,
@@ -194,6 +221,16 @@ fn setup(
         SplashTimer(Timer::from_seconds(25.0, TimerMode::Once))
     );
 
+    // testing timer idea - needs way mor thought.
+    // should be more liek a state machine
+    commands.spawn(
+        PhaseTimer::new_with_phase(5.0, GamePhase::Sculpting)
+    );
+
+    commands.spawn(
+         PhaseTimer::new_with_state(2.0, GameState::Splash)
+     );
+
     commands.spawn((
         TextFont {
             font_size: 18.0,
@@ -279,6 +316,34 @@ pub fn countdown(
     }
 }
 
+fn timers_downdown(
+    time: Res<Time>,
+    mut timers: Query<(Entity, &mut PhaseTimer)>,
+    mut game_state: ResMut<NextState<GameState>>,
+    mut game_phase: ResMut<NextState<GamePhase>>,
+    mut commands: Commands,
+) {
+    for (e, mut pt) in timers.iter_mut() {
+        if pt.timer.tick(time.delta()).finished() {
+            dbg!("donnneszo");
+            match (pt.state.clone(), pt.phase.clone()) {
+                (Some(s), None) => {
+                    info!("would set game state");
+                    //game_state.set(s)
+                },
+                (None, Some(p)) => {
+                    info!("would set game phase");
+                    //game_phase.set(p)
+                },
+                _ => (),
+            }
+            commands.entity(e).despawn();
+        }
+    }
+
+}
+
+
 #[derive(Default, Debug)]
 struct StoneStats {
     stopped_dt: f32,
@@ -359,5 +424,4 @@ fn gameover_update(
     mut state: ResMut<NextState<GameState>>,
 ) {
     state.set(GameState::Splash);
-
 }
