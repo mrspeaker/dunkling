@@ -244,6 +244,7 @@ fn setup(
             left: Val::Px(5.0),
             ..default()
         },
+        OnGameScreen,
     ))
         .with_child( Text::new("Distance:"))
         .with_child((
@@ -262,6 +263,7 @@ fn setup(
             left: Val::Px(5.0),
             ..default()
         },
+        OnGameScreen,
     ))
         .with_child( Text::new("Power:"))
         .with_child((
@@ -440,6 +442,24 @@ fn on_stone_stopped_enter(
     if let Ok(e) = stone.get_single() {
         cmds.entity(e).remove::<RigidBody>();
     }
+
+    cmds.spawn((
+        TextFont {
+            font_size: 48.0,
+            ..default()
+        },
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Percent(50.0),
+            left: Val::Percent(50.0),
+            ..default()
+        },
+        OnGameScreen,
+    ))
+        .with_child( Text::new("OVeR:"))
+        .with_child((
+            Text::new("."),
+        ));
 
     cmds.spawn((
         Timey::new(5.0),
