@@ -6,6 +6,7 @@ use bevy::{
 };
 
 use std::f32::consts::*;
+use std::time::Duration;
 
 use crate::constants::{
     SHEET_PRE_AREA,
@@ -17,7 +18,6 @@ use crate::constants::{
     STONE_X,
     STONE_Y,
     STONE_Z,
-    SHEET_TOTAL
 };
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
@@ -49,7 +49,8 @@ pub enum GamePhase {
     #[default]
     Aiming,
     Sculpting,
-    EndGame
+    EndGame,
+    StoneStopped,
 }
 
 #[derive(Component, Deref, DerefMut)]
@@ -108,7 +109,7 @@ impl Plugin for GamePlugin {
         app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
 
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
-        app.add_systems(OnEnter(GamePhase::EndGame), on_game_over);
+        app.add_systems(OnEnter(GamePhase::StoneStopped), on_stone_stopped_enter);
         app.add_systems(
             Update,
             (
@@ -116,6 +117,7 @@ impl Plugin for GamePlugin {
                 track_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
                 text_power,
+                stone_stopped_update.run_if(in_state(GamePhase::StoneStopped)),
                 gameover_update.run_if(in_state(GamePhase::EndGame)),
             ));
 
@@ -325,7 +327,6 @@ fn timers_downdown(
 ) {
     for (e, mut pt) in timers.iter_mut() {
         if pt.timer.tick(time.delta()).finished() {
-            dbg!("donnneszo");
             match (pt.state.clone(), pt.phase.clone()) {
                 (Some(s), None) => {
                     info!("would set game state");
@@ -355,10 +356,8 @@ fn track_stone(
     mut stone_stats: Local<StoneStats>,
 ){
     let Ok(vel) = stone.get_single() else { return; };
-    //dbg!(vel.length());
-
     if vel.length() < STONE_STOP_VEL {
-        phase.set(GamePhase::EndGame);
+        phase.set(GamePhase::StoneStopped);
     }
 
 }
@@ -417,9 +416,49 @@ fn start_anims_on_load(
     }*/
 }
 
-fn on_game_over() {
-    info!("game over...");
+#[derive(Component)]
+struct Timey {
+    timer: Timer,
 }
+impl Timey {
+    pub fn new(duration: f32) -> Self {
+        Self {
+            timer: Timer::from_seconds(duration, TimerMode::Once)
+        }
+    }
+
+    pub fn tick(&mut self, delta: Duration) -> bool {
+        self.timer.tick(delta).just_finished()
+    }
+}
+
+
+fn on_stone_stopped_enter(
+    mut cmds: Commands,
+    stone: Query<Entity, With<Stone>>,
+) {
+    if let Ok(e) = stone.get_single() {
+        cmds.entity(e).remove::<RigidBody>();
+    }
+
+    cmds.spawn((
+        Timey::new(5.0),
+        OnGameScreen,
+    ));
+}
+
+fn stone_stopped_update(
+    mut state: ResMut<NextState<GamePhase>>,
+    mut timers: Query<&mut Timey>,
+    time: Res<Time>,
+) {
+    for mut timer in timers.iter_mut() {
+        if timer.tick(time.delta()) {
+            state.set(GamePhase::EndGame);
+        }
+    }
+}
+
 fn gameover_update(
     mut state: ResMut<NextState<GameState>>,
 ) {
