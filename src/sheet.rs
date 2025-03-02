@@ -413,11 +413,11 @@ pub fn terrain_sculpt(
             if h > 7.0 {
                 Color::WHITE.to_linear().to_f32_array()
             } else if h > 1.0{
-                Color::srgb(0.4, 0.4, 0.1)
+                Color::srgb(0.4, 0.3, 0.1)
                     .to_linear()
                     .to_f32_array()
             } else {
-                Color::linear_rgb(0.36,0.7, 0.219)
+                Color::linear_rgb(0.26,0.9, 0.119)
                 //Color::srgb(0.1, 0.5, 0.0)
                     .to_linear()
                     .to_f32_array()
@@ -493,11 +493,11 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32)
             if h > 7.0 {
                 Color::WHITE.to_linear().to_f32_array()
             } else if h > 1.0{
-                Color::srgb(0.4, 0.4, 0.1)
+                Color::srgb(0.4, 0.3, 0.1)
                     .to_linear()
                     .to_f32_array()
             } else {
-                Color::linear_rgb(0.36,0.7, 0.219)
+                Color::linear_rgb(0.26,0.9, 0.119)
                 //Color::srgb(0.1, 0.5, 0.0)
                     .to_linear()
                     .to_f32_array()

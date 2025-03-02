@@ -4,6 +4,7 @@ use bevy::{
     color::palettes::css::*,
     scene::SceneInstanceReady,
 };
+use bevy_hanabi::prelude::*;
 
 use std::f32::consts::*;
 use std::time::Duration;
@@ -95,7 +96,8 @@ impl Plugin for GamePlugin {
         app.add_plugins((
             MeshPickingPlugin,
             //PhysicsDebugPlugin::default(),
-            PhysicsPlugins::default()));
+            PhysicsPlugins::default(),
+            HanabiPlugin));
         app.add_plugins(splash_plugin);
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
@@ -130,7 +132,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut effects: ResMut<Assets<EffectAsset>>,
     asset_server: Res<AssetServer>,
 ) {
     let texture_handle = asset_server.load("textures/stone076.jpg");
@@ -181,7 +183,7 @@ fn setup(
         base_color_texture: Some(texture_handle.clone()),
         double_sided: true,
         cull_mode: None, //Some(Face::Back)
-        alpha_mode: AlphaMode::Blend,
+        alpha_mode: bevy::prelude::AlphaMode::Blend,
         unlit: true,
         ..default()
     });
@@ -291,6 +293,46 @@ fn setup(
                 .with_scale(Vec3::splat(25.0))
         ));
 
+
+    // Define a color gradient from red to transparent black
+    let mut gradient = Gradient::new();
+    gradient.add_key(0.0, Vec4::new(0.5, 0.5, 0.5, 1.0));
+    gradient.add_key(0.1, Vec4::new(0.5, 0.5, 0.0, 1.0));
+    gradient.add_key(0.4, Vec4::new(0.5, 0.0, 0.0, 1.0));
+    gradient.add_key(1.0, Vec4::splat(0.0));
+    let mut module = Module::default();
+    let init_pos = SetPositionSphereModifier {
+        center: module.lit(Vec3::ZERO),
+        radius: module.lit(10.),
+        dimension: ShapeDimension::Volume,
+    };
+    let init_vel = SetVelocitySphereModifier {
+        center: module.lit(Vec3::ZERO),
+        speed: module.lit(6.),
+    };
+    let lifetime = module.lit(5.);
+    let init_lifetime = SetAttributeModifier::new(Attribute::LIFETIME, lifetime);
+    let accel = module.lit(Vec3::new(0., -20., 0.));
+    let update_accel = AccelModifier::new(accel);
+    let effect = EffectAsset::new(
+        32768,
+        Spawner::rate(50.0.into()),
+        module
+    )
+        .with_name("MyEffect")
+        .init(init_pos)
+        .init(init_vel)
+        .init(init_lifetime)
+        .update(update_accel)
+        .render(ColorOverLifetimeModifier { gradient });
+
+    let effect_handle = effects.add(effect);
+    commands
+        .spawn(ParticleEffectBundle {
+            effect: ParticleEffect::new(effect_handle),
+            transform: Transform::from_xyz(STONE_X, STONE_Y, STONE_Z + 500.),
+            ..Default::default()
+        });
 
 }
 
