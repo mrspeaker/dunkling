@@ -328,11 +328,13 @@ fn setup(
 
     let effect_handle = effects.add(effect);
     commands
-        .spawn(ParticleEffectBundle {
-            effect: ParticleEffect::new(effect_handle),
-            transform: Transform::from_xyz(STONE_X, STONE_Y, STONE_Z + 500.),
-            ..Default::default()
-        });
+        .spawn((
+            ParticleEffectBundle {
+                effect: ParticleEffect::new(effect_handle),
+                transform: Transform::from_xyz(STONE_X, STONE_Y, STONE_Z + 500.),
+                ..Default::default()
+            },
+            OnGameScreen));
 
 }
 

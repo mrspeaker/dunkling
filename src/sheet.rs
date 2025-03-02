@@ -61,6 +61,11 @@ impl Command for SpawnTerrain {
             .expect("StandardMaterial Assets to exist")
             .add(Color::WHITE);
 
+        let mesh_ground = world
+            .get_resource_mut::<Assets<Mesh>>()
+            .expect("Meshes should exist")
+            .add(Cuboid::new(CHUNK_SIZE, 50.0, CHUNK_SIZE));
+
         let mut ent = world.spawn((
             OnGameScreen,
             Mesh3d(mesh),
@@ -68,7 +73,7 @@ impl Command for SpawnTerrain {
             Friction::new(10.0),
             ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
             CollisionMargin(0.05),
-            MeshMaterial3d(mat),
+            MeshMaterial3d(mat.clone()),
             Transform::from_xyz(
                 self.pos.x as f32 * CHUNK_SIZE,
                 0.,
@@ -85,6 +90,8 @@ impl Command for SpawnTerrain {
             OnGameScreen,
             RigidBody::Static,
             Friction::new(10.0),
+            Mesh3d(mesh_ground),
+            MeshMaterial3d(mat.clone()),
             ColliderConstructor::Cuboid {
                 x_length: CHUNK_SIZE,
                 y_length: 50.0,
@@ -92,7 +99,7 @@ impl Command for SpawnTerrain {
             },
             Transform::from_xyz(
                 self.pos.x as f32 * CHUNK_SIZE,
-                -25.0,
+                -25.05,
                 self.pos.y as f32 * CHUNK_SIZE,
             ),
         ));
@@ -255,13 +262,6 @@ fn setup(
         ..default()
     });
 
-/*    let mat = StandardMaterial {
-        base_color: Color::linear_rgb(0.36,0.7, 0.219),
-        perceptual_roughness: 0.5,
-        ..default()
-};*/
-    let mat = Color::WHITE;
-
     commands.spawn((
         OnGameScreen,
         Mesh3d(meshes.add(plane)),
@@ -310,8 +310,7 @@ fn setup(
     ));
 
 
-
-
+    // Add some trees
     let mut rng = rand::thread_rng();
     for _ in 0..100 {
         let pos = Vec3::new(
