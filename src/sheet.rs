@@ -37,6 +37,15 @@ struct SpawnTerrain {
     bumpiness: f32,
 }
 
+#[derive(Resource)]
+struct PerlinInst(Box<PerlinNoise>);
+impl PerlinInst {
+    pub fn new() -> Self {
+        let perlin_noise = Box::new(PerlinNoise::new());
+        Self(perlin_noise)
+    }
+}
+
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
 
@@ -49,7 +58,11 @@ impl Command for SpawnTerrain {
 
         let xo = self.pos.x * CELL_WIDTH as i32;
         let yo = self.pos.y * CELL_LENGTH as i32;
-        terraform(&mut plane2, &mut hm2, xo, yo, self.bumpiness);
+
+        let perlin = world.get_resource_or_insert_with(
+            || PerlinInst::new()
+        );
+        terraform(&mut plane2, &mut hm2, xo, yo, self.bumpiness, &*perlin.0);
 
         let mesh = world
             .get_resource_mut::<Assets<Mesh>>()
@@ -235,7 +248,8 @@ fn setup(
         .mesh()
         .size(CHUNK_SIZE, CHUNK_SIZE)
     );
-    terraform(&mut plane, &mut height_map, 0, 0, 0.1);
+    let perlin = PerlinNoise::new();
+    terraform(&mut plane, &mut height_map, 0, 0, 0.1, &perlin);
 
     commands.insert_resource(height_map);
 
@@ -279,8 +293,8 @@ fn setup(
         Sheet
     ));
 
-    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
+    //commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
+    //commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
 
     for i in 0..NUM_CHUNKS {
         commands.queue(SpawnTerrain{
@@ -455,7 +469,7 @@ fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
     return ns;
 }
 
-fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32) {
+fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32, perlin: &PerlinNoise) {
 
     let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
@@ -463,19 +477,25 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32)
         panic!("Unexpected vertex format, expected Float32x3.");
     };
 
-    let perlin = PerlinNoise::new();
+    //let perlin = PerlinNoise::new();
+    println!("terraform: xo {} yo {} {}", xo, yo, ratio);
 
     let mut max = -9999.0;
     let mut min = 9999.0;
     let terrain_height = MAX_TERRAIN_HEIGHT * ratio;
-    let size = 10.0;
+    let size = 0.05;
+    let mut xx = 0;
+    let mut yy = 0;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
             let mut h = perlin.get3d([
-                ((x as i32 + xo) as f64) / size,
-                ((y as i32 + yo) as f64) / size,
+                (x as f64 * size) + (xo as f64 * size),
+                (y as f64 * size) + (yo as f64 * size),
                 0.0,
             ]);
+            xx = x;
+            yy = y;
+            //println!("{} {} = {} {}", xo, ((x as i32 + xo) as f64) * size, yo, ((y as i32 + yo) as f64) * size);
             h = h.max(0.5) - 0.5;
             set_height(x, y, h as f32 * terrain_height, map, vert_pos);
 
@@ -483,7 +503,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32)
             if h > max { max = h; };
         }
     }
-    dbg!(min, max);
+    dbg!(min, max, xx, yy);
 
     let cols: Vec<[f32; 4]> = vert_pos
         .iter()
