@@ -3,7 +3,7 @@ use bevy::{
     image::{ImageAddressMode, ImageLoaderSettings, ImageSampler, ImageSamplerDescriptor},
     math::Affine2,
     prelude::*,
-//    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+    //pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
     render::{
         mesh::{Indices, VertexAttributeValues, PlaneMeshBuilder},
         render_asset::RenderAssetUsages,
@@ -29,7 +29,7 @@ pub struct TerrainSculpt {
     pub up: bool,
     pub idx: usize,
     pub p1: Vec3,
-    pub p2: Vec3,
+    //pub p2: Vec3,
 }
 
 struct SpawnTerrain {
@@ -66,18 +66,13 @@ impl Command for SpawnTerrain {
 
         let mesh = world
             .get_resource_mut::<Assets<Mesh>>()
-            .expect("mesh Assets to be exist")
+            .expect("Mesh Assets should exist")
             .add(plane2);
 
         let mat = world
             .get_resource_mut::<Assets<StandardMaterial>>()
             .expect("StandardMaterial Assets to exist")
             .add(Color::WHITE);
-
-        let mesh_ground = world
-            .get_resource_mut::<Assets<Mesh>>()
-            .expect("Meshes should exist")
-            .add(Cuboid::new(CHUNK_SIZE, 50.0, CHUNK_SIZE));
 
         let mut ent = world.spawn((
             OnGameScreen,
@@ -94,16 +89,23 @@ impl Command for SpawnTerrain {
             ),
             //Wireframe,
         ));
+
+        // Don't make the final target chunk a "Sheet".
         if self.pos.y != NUM_CHUNKS - 1 {
             ent.insert(Sheet);
         }
+
+        let mesh_underground = world
+            .get_resource_mut::<Assets<Mesh>>()
+            .expect("Mesh Assets should exist")
+            .add(Cuboid::new(CHUNK_SIZE, 50.0, CHUNK_SIZE));
 
         // Stop from falling through ground
         world.spawn((
             OnGameScreen,
             RigidBody::Static,
             Friction::new(10.0),
-            Mesh3d(mesh_ground),
+            Mesh3d(mesh_underground),
             MeshMaterial3d(mat.clone()),
             ColliderConstructor::Cuboid {
                 x_length: CHUNK_SIZE,
@@ -226,8 +228,8 @@ pub struct SheetPlugin;
 
 impl Plugin for SheetPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_plugins(WireframePlugin);
-        /*app.insert_resource(WireframeConfig {
+        /*app.add_plugins(WireframePlugin);
+        app.insert_resource(WireframeConfig {
             global: false,
             default_color: Color::linear_rgb(0.1,0.1, 0.),
         });*/
@@ -293,8 +295,8 @@ fn setup(
         Sheet
     ));
 
-    //commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
-    //commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
 
     for i in 0..NUM_CHUNKS {
         commands.queue(SpawnTerrain{
@@ -386,39 +388,31 @@ pub fn terrain_sculpt(
 
     let ev = trigger.event();
     let up = ev.up;
-    let v = ev.idx;
+    let _vert = ev.idx;
+    let point = ev.p1;
 
     // Get sheet position from world position
-    let p1 = ev.p1 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
-    let p2 = ev.p2 - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
-
+    let p1 = point - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
     let Some((c1x, c1y)) = height_map.get_cell_from_pos(p1.x, p1.z) else { return; };
-    let Some((c2x, c2y)) = height_map.get_cell_from_pos(p2.x, p2.z) else { return; };
 
     let h = STONE_RADIUS * 0.1 * if up { 0.5 } else { -1.0 };
 
-    add_height(c1x, c1y, h, &mut *height_map, &mut *vert_pos);
+    // change the heights of surrounding verts
+    add_height(c1x, c1y, h * 0.3, &mut *height_map, &mut *vert_pos);
     let ns = get_neighbours(c1x, c1y);
     for (x, y) in ns {
-        add_height(x, y, h * 0.8, &mut *height_map, &mut *vert_pos);
+        add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos);
         let ns = get_neighbours(x, y);
         for (x, y) in ns {
             add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos);
-        }
-    }
-    if c1x != c2x || c1y != c2y {
-        add_height(c2x, c2y, h, &mut *height_map, &mut *vert_pos);
-        let ns = get_neighbours(c2x, c2y);
-        for (x, y) in ns {
-            add_height(x, y, h * 0.8, &mut *height_map, &mut *vert_pos);
             let ns = get_neighbours(x, y);
             for (x, y) in ns {
                 add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos);
             }
-
         }
     }
 
+    // Re-colorize the chunk verts
     let cols: Vec<[f32; 4]> = vert_pos
         .iter()
         .map(|[_, h, _]| {

@@ -107,7 +107,11 @@ fn terrain_mouse(
             let dist = rmh.point.xz().distance(last_mouse.pos.xz());
             if dist > 1.0 {
                 commands.trigger_targets(
-                    TerrainSculpt { up: is_right, idx, p1: last_mouse.pos, p2: rmh.point },
+                    TerrainSculpt {
+                        up: is_right,
+                        idx,
+                        p1: rmh.point,
+                    },
                     e.clone()
                 );
                 last_mouse.pos = rmh.point;
@@ -147,6 +151,7 @@ fn stone_update(
     let x_dist = stone_pos.translation.x.abs();
     let y_dist = stone_pos.translation.y;
     if x_dist > CHUNK_SIZE || y_dist < -STONE_RADIUS * 12.0 {
+        // TODO: this should transition to phase
         stone_pos.translation = Vec3::new(STONE_X, STONE_Y, STONE_Z);
         vel_vec.x = 0.0;
         vel_vec.y = 0.0;

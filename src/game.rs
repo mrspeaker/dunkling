@@ -98,6 +98,7 @@ impl Plugin for GamePlugin {
             //PhysicsDebugPlugin::default(),
             PhysicsPlugins::default(),
             HanabiPlugin));
+        //app.insert_resource(SubstepCount(20));
         app.add_plugins(splash_plugin);
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
@@ -159,6 +160,7 @@ fn setup(
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
+        TransformInterpolation
     ));
 
     // Light
