@@ -196,6 +196,15 @@ fn setup(
         OnGameScreen
     ));
 
+    commands.spawn((
+        Mesh3d(meshes.add(Cylinder::default())),
+        MeshMaterial3d(materials.add(Color::from(SILVER))),
+        Transform::from_translation(TARGET_CENTRE)
+            .with_scale(Vec3::new(5.0, 200.0, 5.0)),
+        OnGameScreen
+    ));
+
+    // Splash screen timer.
     commands.insert_resource(
         SplashTimer(Timer::from_seconds(25.0, TimerMode::Once))
     );
@@ -480,6 +489,7 @@ fn on_stone_stopped_enter(
         Timey::new(5.0),
         OnGameScreen,
     ));
+
 }
 
 fn stone_stopped_update(

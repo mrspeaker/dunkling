@@ -17,7 +17,7 @@ pub const STONE_X: f32 = 0.0;
 pub const STONE_Y: f32 = 150.0;
 pub const STONE_Z: f32 = -CHUNK_SIZE + SHEET_PRE_AREA;
 
-pub const TARGET_CENTRE: Vec3 = Vec3::ZERO;
+pub const TARGET_CENTRE: Vec3 = Vec3::new(0.0, 0.0, SHEET_TOTAL - (CHUNK_SIZE / 1.0));
 
 pub const MAX_TERRAIN_HEIGHT: f32 = 50.0;
 
