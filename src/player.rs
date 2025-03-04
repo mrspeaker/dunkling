@@ -181,6 +181,7 @@ struct Aiming {
 
 fn aim_mouse(
     buttons: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut aim: Local<Aiming>,
     time: Res<Time>,
@@ -189,6 +190,10 @@ fn aim_mouse(
     mut commands: Commands
 ) {
     if aim.fired {
+        return;
+    }
+
+    if keys.pressed(KeyCode::ShiftLeft) {
         return;
     }
 

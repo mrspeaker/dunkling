@@ -1,10 +1,15 @@
 * TODO
+** Don't allow "build" directly under stone
+- to easy to cheese. Also physics goes nuts
 ** Figure out coordinates for realsy
-- match coords to verts
+-- 0.0.0 is where you start. 0.0.SHEET_TOTAL - CHUNK_SIZE is target
+- match coords to verts  
 ** Fix terrain joining
-- probably depends on figuring out coords
-** Score display when boulder stops
+- [done-ish]probably depends on figuring out coords
+** [DONE] Score display when boulder stops
+** Highscore.
 ** Allow early restart
+- [DONE] hit ESC. need to make pause menu for reals though
 ** [DONE] Remove orbit cam when not orbit
 - or something to fix the jitter
 ** Refix initial angled chunks
@@ -13,4 +18,5 @@
 - all click on edge as it rotates to steer
   - only in air? ground too?
 ** Somehow slow down faster at end
+[DONE] - added angulardamping (see constants)
 

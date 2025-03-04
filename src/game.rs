@@ -18,6 +18,8 @@ use crate::constants::{
     STONE_Y,
     STONE_Z,
     TARGET_CENTRE,
+    STONE_ANGULAR_DAMPENING_INC_START_AT,
+    STONE_ANGULAR_DAMPENING_INC_AMOUNT
 };
 
 use crate::camera::CameraPlugin;
@@ -121,7 +123,7 @@ impl Plugin for GamePlugin {
             Update,
             (
                 timers_downdown,
-                track_stone.run_if(in_state(GamePhase::Sculpting)),
+                track_and_dampen_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
                 text_power,
                 stone_stopped_update.run_if(in_state(GamePhase::StoneStopped)),
@@ -335,15 +337,23 @@ fn fire_stone(
     commands.entity(e).insert(RigidBody::Dynamic);
 }
 
-pub fn track_stone(
-    stone: Query<&LinearVelocity, With<Stone>>,
+pub fn track_and_dampen_stone(
+    mut stone: Query<(&Transform, &LinearVelocity, &mut AngularDamping), With<Stone>>,
     mut phase: ResMut<NextState<GamePhase>>,
+    time: Res<Time>
 ){
-    let Ok(vel) = stone.get_single() else { return; };
+    let Ok((stone_pos, vel, mut damp)) = stone.get_single_mut() else { return; };
+
+    // Slow down the stone faster when starting to go slow
+    if vel.length() < STONE_ANGULAR_DAMPENING_INC_START_AT &&
+        stone_pos.translation.y < STONE_ANGULAR_DAMPENING_INC_START_AT {
+            damp.0 += STONE_ANGULAR_DAMPENING_INC_AMOUNT * time.delta_secs();
+        }
+
+    // Finish when too slow.
     if vel.length() < STONE_STOP_VEL {
         phase.set(GamePhase::StoneStopped);
     }
-
 }
 
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
