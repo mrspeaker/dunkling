@@ -24,3 +24,4 @@ pub const TARGET_CENTRE: Vec3 = Vec3::new(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE);
 
 pub const MAX_TERRAIN_HEIGHT: f32 = 50.0;
 
+pub const MIN_SCULT_DIST_FROM_STONE: f32 = 18.0;

@@ -12,11 +12,13 @@ use crate::sheet::{Sheet, TerrainSculpt};
 use crate::stone::Stone;
 
 use crate::constants::{
+    CHUNK_SIZE,
+    MIN_SCULT_DIST_FROM_STONE,
     STONE_RADIUS,
     SHEET_PRE_AREA,
     STONE_X,
     STONE_Y,
-    STONE_Z, CHUNK_SIZE,
+    STONE_Z,
 };
 
 const INIT_X:f32 = STONE_RADIUS * 10.0;
@@ -77,6 +79,7 @@ fn terrain_mouse(
     windows: Single<&Window>,
     mut ray_cast: MeshRayCast,
     terrain_query: Query<(Entity, &Mesh3d), With<Sheet>>,
+    stone_query: Query<&Transform, With<Stone>>,
     mut last_mouse: Local<LastMouse>,
     mut commands: Commands,
 ) {
@@ -97,15 +100,26 @@ fn terrain_mouse(
         return;
     };
 
+    let stone_pos_opt = stone_query.get_single();
+
     let filter = |entity| terrain_query.contains(entity);
     // let early_exit_test = |_entity| false;
     let settings = RayCastSettings::default()
         .with_filter(&filter);
     let hits = ray_cast.cast_ray(ray, &settings);
     for (e, rmh) in hits.iter() {
+
+        // Don't sculpt if too close to stone
+        if let Ok(pos) = stone_pos_opt {
+            let dist_to_stone = pos.translation.distance(rmh.point);
+            if dist_to_stone < MIN_SCULT_DIST_FROM_STONE {
+                continue;
+            }
+        }
+
         if let Some(idx) = rmh.triangle_index {
-            let dist = rmh.point.xz().distance(last_mouse.pos.xz());
-            if dist > 1.0 {
+            let dist_mouse_moved = rmh.point.xz().distance(last_mouse.pos.xz());
+            if dist_mouse_moved > 1.0 {
                 commands.trigger_targets(
                     TerrainSculpt {
                         up: is_right,
