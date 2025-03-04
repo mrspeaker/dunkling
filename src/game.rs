@@ -471,6 +471,10 @@ impl Timey {
     pub fn tick(&mut self, delta: Duration) -> bool {
         self.timer.tick(delta).just_finished()
     }
+
+    pub fn elapsed(&self) -> Duration {
+        self.timer.elapsed()
+    }
 }
 
 fn on_stone_stopped_enter(
@@ -502,7 +506,7 @@ fn on_stone_stopped_enter(
         ));
 
     cmds.spawn((
-        Timey::new(5.0),
+        Timey::new(20.0),
         OnGameScreen,
     ));
 
@@ -511,9 +515,20 @@ fn on_stone_stopped_enter(
 fn stone_stopped_update(
     mut state: ResMut<NextState<GamePhase>>,
     mut timers: Query<&mut Timey>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
     for mut timer in timers.iter_mut() {
+        // Back to splash if click after 1 second
+        if timer.elapsed().as_secs() > 1 {
+            let is_mouse = buttons.just_pressed(MouseButton::Left);
+            let is_shift = keys.pressed(KeyCode::ShiftLeft);
+            if is_mouse && !is_shift {
+                state.set(GamePhase::EndGame);
+            }
+        }
+
         if timer.tick(time.delta()) {
             state.set(GamePhase::EndGame);
         }
