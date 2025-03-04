@@ -234,8 +234,13 @@ fn aim_mouse(
 
     if aim.power_up  {
         aim.power += time.delta_secs();
-        t.translation.x -= time.delta_secs() * 50.0;
-        thor.rotation.x = -(aim.power / 10.0).sin();
+        // Hacky way to show max power
+        // move weird ball and character... top at "max"
+        // TODO: calc max power for real, not just "about 3 seconds"
+        if aim.power < 3.0 {
+            t.translation.x -= time.delta_secs() * 70.0;
+            thor.rotation.x = -(aim.power / 10.0).sin();
+        }
     }
 
     if aim.power_up && buttons.just_released(MouseButton::Left) {

@@ -19,7 +19,9 @@ use crate::constants::{
     STONE_Z,
     TARGET_CENTRE,
     STONE_ANGULAR_DAMPENING_INC_START_AT,
-    STONE_ANGULAR_DAMPENING_INC_AMOUNT
+    STONE_ANGULAR_DAMPENING_INC_AMOUNT,
+    STONE_HURL_TIME_TO_POWER_MULTIPLIER,
+    STONE_HURL_AIM_ANGLE_MULTIPLIER
 };
 
 use crate::camera::CameraPlugin;
@@ -406,8 +408,8 @@ fn on_hurl_stone(
     mut stone: Query<&mut LinearVelocity, With<Stone>>
 ) {
     let Ok(mut vel) = stone.get_single_mut() else { return; };
-    vel.x = trigger.event().angle * 200.0;
-    vel.z = trigger.event().power * 100.0;
+    vel.x = trigger.event().angle * STONE_HURL_AIM_ANGLE_MULTIPLIER;
+    vel.z = trigger.event().power * STONE_HURL_TIME_TO_POWER_MULTIPLIER;
     vel.y = -100.0;
     info!("power: {} angle: {}", vel.z, vel.x);
     phase.set(GamePhase::Sculpting);
