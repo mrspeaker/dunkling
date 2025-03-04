@@ -16,7 +16,7 @@ use std::f32::consts::*;
 use rand::prelude::*;
 
 use crate::constants::{
-    CELL_LENGTH, CELL_WIDTH, MAX_TERRAIN_HEIGHT, SHEET_PRE_AREA, SHEET_RATIO, CHUNK_SIZE, STONE_RADIUS, SHEET_TOTAL, NUM_CHUNKS
+    CELL_SIZE, MAX_TERRAIN_HEIGHT, SHEET_PRE_AREA, CHUNK_SIZE, STONE_RADIUS, SHEET_TOTAL, NUM_CHUNKS
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -29,7 +29,6 @@ pub struct TerrainSculpt {
     pub up: bool,
     pub idx: usize,
     pub p1: Vec3,
-    //pub p2: Vec3,
 }
 
 struct SpawnTerrain {
@@ -49,15 +48,15 @@ impl PerlinInst {
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
 
-        let mut hm2 = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_WIDTH, CELL_LENGTH);
+        let mut hm2 = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_SIZE, CELL_SIZE);
 
         let mut plane2 = build_plane(Plane3d::default()
                                      .mesh()
                                      .size(CHUNK_SIZE, CHUNK_SIZE)
         );
 
-        let xo = self.pos.x * CELL_WIDTH as i32;
-        let yo = self.pos.y * CELL_LENGTH as i32;
+        let xo = self.pos.x * CELL_SIZE as i32;
+        let yo = self.pos.y * CELL_SIZE as i32;
 
         let perlin = world.get_resource_or_insert_with(
             || PerlinInst::new()
@@ -244,7 +243,7 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    let mut height_map = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_WIDTH, CELL_LENGTH);
+    let mut height_map = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_SIZE, CELL_SIZE);
 
     let mut plane = build_plane(Plane3d::default()
         .mesh()
@@ -270,7 +269,7 @@ fn setup(
         });
     // this material renders the texture normally
     let uv_x = 2.0;
-    let uv_y = uv_x * SHEET_RATIO;
+    let uv_y = uv_x;
     let material_handle = materials.add(StandardMaterial {
         base_color_texture: Some(texture_handle.clone()),
         perceptual_roughness: 0.8,
@@ -352,7 +351,7 @@ fn setup(
 fn set_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
     let map = &mut height_map.map;
     (*map)[hm_y][hm_x] = value;
-    verts[hm_y * CELL_WIDTH + hm_x][1] = value;
+    verts[hm_y * CELL_SIZE + hm_x][1] = value;
 }
 
 fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
@@ -364,7 +363,7 @@ fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, 
     let cur = (*map)[hm_y][hm_x];
     let next = (cur + value).max(0.0);
     (*map)[hm_y][hm_x] = next;
-    verts[hm_y * CELL_WIDTH + hm_x][1] = next;
+    verts[hm_y * CELL_SIZE + hm_x][1] = next;
 }
 
 pub fn terrain_sculpt(
@@ -444,20 +443,18 @@ pub fn terrain_sculpt(
 }
 
 fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
-    let w = CELL_WIDTH;
-    let l = CELL_LENGTH;
     let mut ns: Vec<(usize,usize)> = vec![];
 
     if x > 0 {
         ns.push((x - 1, z)); // left
     }
-    if x < w {
+    if x < CELL_SIZE {
         ns.push((x + 1, z)); // right
     }
     if z > 0 {
         ns.push((x, z - 1)); // back
     }
-    if z < l {
+    if z < CELL_SIZE {
         ns.push((x, z + 1))
     }
     return ns;
@@ -532,8 +529,8 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
     let size = mb.plane.half_size * 2.0;
-    let z_vertex_count = CELL_LENGTH as u32;
-    let x_vertex_count = CELL_WIDTH as u32;
+    let z_vertex_count = CELL_SIZE as u32;
+    let x_vertex_count = CELL_SIZE as u32;
     let num_vertices = (z_vertex_count * x_vertex_count) as usize;
     let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
 

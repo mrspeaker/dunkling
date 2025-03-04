@@ -7,8 +7,9 @@ use bevy::{
     picking::pointer::PointerInteraction,
 };
 
+use crate::game::{GamePhase, OnGameScreen, Spotty, BigThor};
 use crate::sheet::{Sheet, TerrainSculpt};
-use crate::game::{Stone, Spotty, BigThor};
+use crate::stone::Stone;
 
 use crate::constants::{
     STONE_RADIUS,
@@ -17,7 +18,6 @@ use crate::constants::{
     STONE_Y,
     STONE_Z, CHUNK_SIZE,
 };
-use crate::game::{GameState, GamePhase, OnGameScreen};
 
 const INIT_X:f32 = STONE_RADIUS * 10.0;
 

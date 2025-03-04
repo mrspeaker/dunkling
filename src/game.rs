@@ -12,24 +12,21 @@ use std::time::Duration;
 use crate::constants::{
     SHEET_PRE_AREA,
     CHUNK_SIZE,
-    STONE_DAMPENING,
-    STONE_MAX_VEL,
     STONE_RADIUS,
     STONE_STOP_VEL,
     STONE_X,
     STONE_Y,
     STONE_Z,
+    TARGET_CENTRE
 };
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
 use crate::sheet::SheetPlugin;
 use crate::splash::{splash_plugin, SplashTimer};
+use crate::stone::{Stone, StonePlugin};
 use crate::townsfolk::TownsfolkPlugin;
 
 pub struct GamePlugin;
-
-#[derive(Component)]
-pub struct Stone;
 
 #[derive(Component)]
 pub struct Spotty;
@@ -88,8 +85,9 @@ pub struct TextPower;
 #[derive(Component)]
 pub struct BigThor;
 
-#[derive(Resource, Deref, DerefMut)]
-struct GraphHandle(AnimationGraph);
+fn distance_to_target(pos: Vec3) -> f32 {
+    pos.distance(TARGET_CENTRE)
+}
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
@@ -103,6 +101,7 @@ impl Plugin for GamePlugin {
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
         app.add_plugins(SheetPlugin);
+        app.add_plugins(StonePlugin);
         app.add_plugins(TownsfolkPlugin);
         app.init_state::<GameState>()
             .add_sub_state::<GamePhase>();
@@ -136,33 +135,6 @@ fn setup(
     mut effects: ResMut<Assets<EffectAsset>>,
     asset_server: Res<AssetServer>,
 ) {
-    let texture_handle = asset_server.load("textures/stone076.jpg");
-    // this material renders the texture normally
-    let material_handle = materials.add(StandardMaterial {
-        base_color_texture: Some(texture_handle.clone()),
-        perceptual_roughness: 0.8,
-        ..default()
-    });
-
-    // stone
-    commands.spawn((
-        Stone,
-        OnGameScreen,
-        //RigidBody::Dynamic,
-        Collider::sphere(STONE_RADIUS),
-        LinearDamping(STONE_DAMPENING),
-        MaxLinearSpeed(STONE_MAX_VEL),
-        //Friction::new(10.0),
-        //CollisionMargin(0.1),
-        //Mass(weight),
-        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
-        AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
-        Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
-        MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
-        TransformInterpolation
-    ));
-
     // Light
     commands.spawn((
         PointLight {
@@ -349,6 +321,17 @@ fn fire_stone(
     commands.entity(e).insert(RigidBody::Dynamic);
 }
 
+pub fn track_stone(
+    stone: Query<&LinearVelocity, With<Stone>>,
+    mut phase: ResMut<NextState<GamePhase>>,
+){
+    let Ok(vel) = stone.get_single() else { return; };
+    if vel.length() < STONE_STOP_VEL {
+        phase.set(GamePhase::StoneStopped);
+    }
+
+}
+
 // Generic system that takes a component as a parameter, and will despawn all entities with that component
 pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
     for entity in &to_despawn {
@@ -393,23 +376,6 @@ fn timers_downdown(
 }
 
 
-#[derive(Default, Debug)]
-struct StoneStats {
-    stopped_dt: f32,
-}
-
-fn track_stone(
-    stone: Query<&LinearVelocity, With<Stone>>,
-    mut phase: ResMut<NextState<GamePhase>>,
-    mut stone_stats: Local<StoneStats>,
-){
-    let Ok(vel) = stone.get_single() else { return; };
-    if vel.length() < STONE_STOP_VEL {
-        phase.set(GamePhase::StoneStopped);
-    }
-
-}
-
 fn on_hurl_stone(
     trigger: Trigger<HurlStone>,
     mut phase: ResMut<NextState<GamePhase>>,
@@ -428,13 +394,14 @@ fn text_distance(
     mut txt: Query<&mut Text, With<TextDistance>>,
     stone: Query<&Transform, With<Stone>>
 ) {
-    let Ok(t) = stone.get_single() else { return; };
+    let Ok(stone_pos) = stone.get_single() else { return; };
 
     for mut span in txt.iter_mut() {
-        let vtxt = t.translation.z;//vel.length();
+        let vtxt = distance_to_target(stone_pos.translation);
         span.0 = format!("{vtxt:.2}");
     }
 }
+
 fn text_power(
     mut txt: Query<&mut Text, With<TextPower>>,
     stone: Query<&LinearVelocity, With<Stone>>
@@ -480,13 +447,14 @@ impl Timey {
     }
 }
 
-
 fn on_stone_stopped_enter(
     mut cmds: Commands,
-    stone: Query<Entity, With<Stone>>,
+    stone: Query<(Entity, &Transform), With<Stone>>,
 ) {
-    if let Ok(e) = stone.get_single() {
+    let mut dist: f32 = 999.0;
+    if let Ok((e, st)) = stone.get_single() {
         cmds.entity(e).remove::<RigidBody>();
+        dist = distance_to_target(st.translation);
     }
 
     cmds.spawn((
@@ -504,7 +472,7 @@ fn on_stone_stopped_enter(
     ))
         .with_child( Text::new("OVeR:"))
         .with_child((
-            Text::new("."),
+            Text::new(format!("{dist:.2}")),
         ));
 
     cmds.spawn((

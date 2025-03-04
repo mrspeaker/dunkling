@@ -5,7 +5,7 @@
 - probably depends on figuring out coords
 ** Score display when boulder stops
 ** Allow early restart
-** Remove orbit cam when not orbit
+** [DONE] Remove orbit cam when not orbit
 - or something to fix the jitter
 ** Refix initial angled chunks
 - maybe replace with mountain model

@@ -4,6 +4,7 @@ pub mod constants;
 pub mod player;
 pub mod sheet;
 pub mod splash;
+pub mod stone;
 pub mod townsfolk;
 
 #[cfg(test)]

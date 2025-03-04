@@ -4,7 +4,8 @@ use bevy_atmosphere::settings::SkyboxCreationMode;
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
 use crate::constants::{STONE_RADIUS, STONE_Y};
-use crate::game::{Stone, GameState};
+use crate::game::GameState;
+use crate::stone::Stone;
 
 pub struct CameraPlugin;
 
