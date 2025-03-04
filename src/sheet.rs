@@ -77,7 +77,7 @@ impl Command for SpawnTerrain {
             OnGameScreen,
             Mesh3d(mesh),
             RigidBody::Static,
-            Friction::new(10.0),
+            Friction::new(1.0),
             ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
             CollisionMargin(0.05),
             MeshMaterial3d(mat.clone()),
@@ -294,15 +294,18 @@ fn setup(
         Sheet
     ));
 
-    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
-    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
 
+    // Spawn the  chunks
     for i in 0..NUM_CHUNKS {
         commands.queue(SpawnTerrain{
             pos: IVec2::new(0, i),
             bumpiness: if i == NUM_CHUNKS - 1 { 0.0 } else { i as f32 / NUM_CHUNKS as f32 }
         });
     }
+    // Couple of extra for fun...
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 0), bumpiness: 1.0 });
+    commands.queue(SpawnTerrain{ pos: IVec2::new(1, 2), bumpiness: 1.8 });
+
 
     let quad_width = CHUNK_SIZE;
     let material_handle = materials.add(StandardMaterial {
@@ -469,14 +472,11 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
     };
 
     //let perlin = PerlinNoise::new();
-    println!("terraform: xo {} yo {} {}", xo, yo, ratio);
 
     let mut max = -9999.0;
     let mut min = 9999.0;
     let terrain_height = MAX_TERRAIN_HEIGHT * ratio;
     let size = 0.05;
-    let mut xx = 0;
-    let mut yy = 0;
     for y in 0..map.cell_h {
         for x in 0..map.cell_w {
             let mut h = perlin.get3d([
@@ -484,9 +484,14 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
                 (y as f64 * size) + (yo as f64 * size),
                 0.0,
             ]);
-            xx = x;
-            yy = y;
             //println!("{} {} = {} {}", xo, ((x as i32 + xo) as f64) * size, yo, ((y as i32 + yo) as f64) * size);
+
+            let h2 = perlin.get3d([
+                (x as f64 * size * 20.0) + (xo as f64 * size * 20.0),
+                (y as f64 * size * 20.0) + (yo as f64 * size * 20.0),
+                0.0,
+            ]) * 0.05;
+            h += h2;
             h = h.max(0.5) - 0.5;
             //let pp = 1.0 - ((x as f32 / map.cell_w as f32) * 3.1415).sin();
             let px =  ((x as f32 / map.cell_w as f32) - 0.5) * 2.0;
@@ -497,7 +502,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
             if h > max { max = h; };
         }
     }
-    dbg!(min, max, xx, yy);
+    dbg!(min, max);
 
     let cols: Vec<[f32; 4]> = vert_pos
         .iter()

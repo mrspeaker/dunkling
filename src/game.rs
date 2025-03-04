@@ -17,8 +17,9 @@ use crate::constants::{
     STONE_X,
     STONE_Y,
     STONE_Z,
-    TARGET_CENTRE
+    TARGET_CENTRE,
 };
+
 use crate::camera::CameraPlugin;
 use crate::player::{PlayerPlugin, HurlStone};
 use crate::sheet::SheetPlugin;

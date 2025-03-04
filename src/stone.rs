@@ -4,6 +4,7 @@ use avian3d::prelude::*;
 use crate::game::{GameState, OnGameScreen};
 
 use crate::constants::{
+    STONE_ANGULAR_DAMPENING,
     STONE_DAMPENING,
     STONE_MAX_VEL,
     STONE_RADIUS,
@@ -43,8 +44,9 @@ fn setup(
         //RigidBody::Dynamic,
         Collider::sphere(STONE_RADIUS),
         LinearDamping(STONE_DAMPENING),
+        AngularDamping(STONE_ANGULAR_DAMPENING),
         MaxLinearSpeed(STONE_MAX_VEL),
-        //Friction::new(10.0),
+        Friction::new(1.0),
         //CollisionMargin(0.1),
         //Mass(weight),
         LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),

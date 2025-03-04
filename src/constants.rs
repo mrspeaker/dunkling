@@ -1,8 +1,9 @@
 use bevy::math::Vec3;
 
-pub const STONE_RADIUS: f32 = 10.0;
-pub const STONE_DAMPENING: f32 = 0.05;
-pub const STONE_MAX_VEL: f32 = 400.0;
+pub const STONE_RADIUS: f32 = 10.0; // in metres
+pub const STONE_DAMPENING: f32 = 0.05; // default: 0.0
+pub const STONE_ANGULAR_DAMPENING: f32 = 0.05; // default: 0.0
+pub const STONE_MAX_VEL: f32 = 500.0;
 pub const STONE_STOP_VEL: f32 = 4.0;
 
 pub const CHUNK_SIZE: f32 = 400.0;

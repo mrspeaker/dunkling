@@ -35,8 +35,7 @@ fn setup(
         TrackingCamera,
         PanOrbitCamera {
             modifier_orbit: Some(KeyCode::ShiftLeft),
-            //modifier_pan: Some(KeyCode::ShiftRight),
-            pan_sensitivity: 0.0,
+            pan_sensitivity: 0.0, // disable panning
             zoom_lower_limit: 100.0,
             zoom_upper_limit: Some(500.0),
             ..default()
@@ -49,17 +48,11 @@ fn setup(
     });
 }
 
-pub fn cam_track(
+pub fn cam_track_(
     //time: Res<Time>,
     stone: Query<&Transform, (With<Stone>, Without<TrackingCamera>)>,
     mut camera: Query<&mut Transform, With<TrackingCamera>>,
-    keys: Res<ButtonInput<KeyCode>>,
-
 ){
-    // Don't use this when panning
-    let is_shift = keys.pressed(KeyCode::ShiftLeft);
-    if is_shift { return; };
-
     //let dt = time.delta_secs();
     let Ok(stone_pos) = stone.get_single() else { return; };
 
@@ -90,12 +83,7 @@ pub fn cam_track(
 pub fn cam_track_orbit(
     stone: Query<&Transform, With<Stone>>,
     mut camera: Query<&mut PanOrbitCamera>,
-    keys: Res<ButtonInput<KeyCode>>,
 ){
-    // Only use this when panning
-    //let is_shift = keys.pressed(KeyCode::ShiftLeft);
-    //if !is_shift { return; };
-
     let Ok(stone_pos) = stone.get_single() else { return; };
     let Ok(mut camera) = camera.get_single_mut() else { return; };
     camera.target_focus = stone_pos.translation;
@@ -103,15 +91,26 @@ pub fn cam_track_orbit(
 }
 
 fn add_atmos(
-    camera: Query<Entity, With<TrackingCamera>>,
+    mut camera: Query<(Entity, &mut PanOrbitCamera, &mut Transform), With<PanOrbitCamera>>,
     mut commands: Commands
 ) {
-    let Ok(camera) = camera.get_single() else { return; };
-    commands.entity(camera).insert(AtmosphereCamera::default());
+    println!("add at");
+    let Ok((e, mut cam, mut t)) = camera.get_single_mut() else { return; };
+    commands.entity(e).insert(AtmosphereCamera::default());
+    println!("set tat");
+
+    t.translation.x = 0.0;
+    t.translation.y = STONE_RADIUS * 4.0;
+    t.translation.z =1000.0;// -STONE_RADIUS * 100.0;
+    t.look_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y);
+
+    cam.force_update = true;
+
 }
 
+
 fn remove_atmos(
-    camera: Query<Entity, With<TrackingCamera>>,
+    camera: Query<Entity, With<PanOrbitCamera>>,
     mut commands: Commands
 ) {
     let Ok(camera) = camera.get_single() else { return; };
