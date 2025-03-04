@@ -108,11 +108,15 @@ impl Plugin for GamePlugin {
             .add_sub_state::<GamePhase>();
 
         app.add_systems(OnEnter(GameState::InGame), setup);
-        app.add_systems(Update, countdown.run_if(in_state(GamePhase::Aiming)));
-        app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
-
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
         app.add_systems(OnEnter(GamePhase::StoneStopped), on_stone_stopped_enter);
+
+        app.add_systems(Update, (
+            check_keys,
+            countdown.run_if(in_state(GamePhase::Aiming))
+        ));
+        app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
+
         app.add_systems(
             Update,
             (
@@ -508,4 +512,13 @@ fn gameover_update(
     mut state: ResMut<NextState<GameState>>,
 ) {
     state.set(GameState::Splash);
+}
+
+fn check_keys(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut state: ResMut<NextState<GameState>>,
+) {
+    if keys.pressed(KeyCode::Escape) {
+        state.set(GameState::Splash);
+    }
 }
