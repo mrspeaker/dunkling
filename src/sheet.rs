@@ -491,7 +491,10 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
             yy = y;
             //println!("{} {} = {} {}", xo, ((x as i32 + xo) as f64) * size, yo, ((y as i32 + yo) as f64) * size);
             h = h.max(0.5) - 0.5;
-            set_height(x, y, h as f32 * terrain_height, map, vert_pos);
+            //let pp = 1.0 - ((x as f32 / map.cell_w as f32) * 3.1415).sin();
+            let px =  ((x as f32 / map.cell_w as f32) - 0.5) * 2.0;
+            let pp = px.powf(12.0);
+            set_height(x, y, h as f32 * terrain_height + (pp * 50.0), map, vert_pos);
 
             if h < min { min = h; };
             if h > max { max = h; };
