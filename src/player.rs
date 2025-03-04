@@ -193,6 +193,7 @@ fn aim_mouse(
     }
 
     let Ok(mut t) = powerball.get_single_mut() else { return; };
+    let Ok(mut thor) = thor.get_single_mut() else { return; };
 
     // Rotate angle based on cursor position
     let window = windows.single();
@@ -201,9 +202,11 @@ fn aim_mouse(
         .map(|v| { v / window.size() })
         .and_then(|pos| {
             aim.angle = pos.x - 0.5;
-            thor.get_single_mut().ok().map(|mut th| {
+            thor.rotation.y = aim.angle;
+            Some(true)
+            /*thor.get_single_mut().ok().map(|mut th| {
                 th.rotation.y = aim.angle;
-            })
+            })*/
         });
 
     if buttons.just_pressed(MouseButton::Left) {
@@ -213,6 +216,7 @@ fn aim_mouse(
     if aim.power_up  {
         aim.power += time.delta_secs();
         t.translation.x -= time.delta_secs() * 50.0;
+        thor.rotation.x = -(aim.power / 10.0).sin();
     }
 
     if aim.power_up && buttons.just_released(MouseButton::Left) {
@@ -220,6 +224,7 @@ fn aim_mouse(
             // trigger fire!
             commands.trigger(HurlStone { power: aim.power, angle: aim.angle });
         }
+        thor.rotation.x = 0.0;
         aim.power_up = false;
         aim.power = 0.0;
         t.translation.x = INIT_X;
