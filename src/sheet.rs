@@ -48,12 +48,11 @@ impl PerlinInst {
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
 
-        let mut hm2 = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_SIZE, CELL_SIZE);
-
-        let mut plane2 = build_plane(Plane3d::default()
+        let mut plane = build_plane(Plane3d::default()
                                      .mesh()
                                      .size(CHUNK_SIZE, CHUNK_SIZE)
         );
+        let mut hm = HeightMap::new(CHUNK_SIZE, CHUNK_SIZE, CELL_SIZE, CELL_SIZE);
 
         let xo = self.pos.x * CELL_SIZE as i32;
         let yo = self.pos.y * CELL_SIZE as i32;
@@ -61,12 +60,13 @@ impl Command for SpawnTerrain {
         let perlin = world.get_resource_or_insert_with(
             || PerlinInst::new()
         );
-        terraform(&mut plane2, &mut hm2, xo, yo, self.bumpiness, &*perlin.0);
+
+        terraform(&mut plane, &mut hm, xo, yo, self.bumpiness, &*perlin.0);
 
         let mesh = world
             .get_resource_mut::<Assets<Mesh>>()
             .expect("Mesh Assets should exist")
-            .add(plane2);
+            .add(plane);
 
         let mat = world
             .get_resource_mut::<Assets<StandardMaterial>>()
@@ -309,17 +309,21 @@ fn setup(
 }
 
 fn set_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
+    if hm_x >= height_map.cell_w ||
+        hm_y >= height_map.cell_h {
+           return;
+        }
     let map = &mut height_map.map;
     (*map)[hm_y][hm_x] = value;
     verts[hm_y * CELL_SIZE + hm_x][1] = value;
 }
 
 fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
-    let map = &mut height_map.map;
     if hm_x >= height_map.cell_w ||
         hm_y >= height_map.cell_h {
            return;
         }
+    let map = &mut height_map.map;
     let cur = (*map)[hm_y][hm_x];
     let next = (cur + value).max(0.0);
     (*map)[hm_y][hm_x] = next;
@@ -450,6 +454,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
             ]) * 0.05;
             h += h2;
             h = h.max(0.5) - 0.5;
+            // Make "halfpipe"
             //let pp = 1.0 - ((x as f32 / map.cell_w as f32) * 3.1415).sin();
             let px =  ((x as f32 / map.cell_w as f32) - 0.5) * 2.0;
             let pp = px.powf(12.0);
