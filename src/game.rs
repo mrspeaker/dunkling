@@ -14,9 +14,9 @@ use crate::constants::{
     CHUNK_SIZE,
     STONE_RADIUS,
     STONE_STOP_VEL,
-    STONE_X,
-    STONE_Y,
-    STONE_Z,
+    //STONE_X,
+    //STONE_Y,
+    //STONE_Z,
     TARGET_CENTRE,
     STONE_ANGULAR_DAMPENING_INC_START_AT,
     STONE_ANGULAR_DAMPENING_INC_AMOUNT,
@@ -292,15 +292,16 @@ fn setup(
         .update(update_accel)
         .render(ColorOverLifetimeModifier { gradient });
 
-    let effect_handle = effects.add(effect);
-    commands
+    let _effect_handle = effects.add(effect);
+   /* commands
         .spawn((
             ParticleEffectBundle {
                 effect: ParticleEffect::new(effect_handle),
                 transform: Transform::from_xyz(STONE_X, STONE_Y, STONE_Z + 500.),
                 ..Default::default()
             },
-            OnGameScreen));
+    OnGameScreen));
+    */
 
 }
 
