@@ -6,7 +6,7 @@ use bevy::{
     picking::pointer::PointerInteraction,
 };
 
-use crate::game::{GamePhase, OnGameScreen, Spotty, BigThor};
+use crate::game::{GamePhase, OnGameScreen, Spotty, BigThor, HiScore};
 use crate::sheet::{Sheet, TerrainSculpt};
 use crate::stone::Stone;
 
@@ -147,21 +147,30 @@ fn stone_update(
     input: Res<ButtonInput<KeyCode>>,
     mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
     mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
+    mut hi: ResMut<HiScore>
 ){
     let Ok((mut stone_pos, mut vel_vec)) = stone.get_single_mut() else { return; };
 
     let power = 0.5;
+    let mut cheat = false;
     if input.pressed(KeyCode::KeyW) {
         vel_vec.z += power;
+        cheat = true;
     }
     if input.pressed(KeyCode::KeyS) {
         vel_vec.z -= power;
+        cheat = true;
     }
     if input.pressed(KeyCode::KeyA) {
         vel_vec.x += power;
+        cheat = true;
     }
     if input.pressed(KeyCode::KeyD) {
         vel_vec.x -= power;
+        cheat = true;
+    }
+    if cheat {
+        hi.fault = true;
     }
 
     // update spot light

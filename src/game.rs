@@ -63,6 +63,12 @@ pub struct TextPower;
 #[derive(Component)]
 pub struct BigThor;
 
+#[derive(Resource)]
+pub struct HiScore {
+    pub score: f32,
+    pub fault: bool
+}
+
 fn distance_to_target(pos: Vec3) -> f32 {
     pos.distance(TARGET_CENTRE)
 }
@@ -74,7 +80,7 @@ impl Plugin for GamePlugin {
             //PhysicsDebugPlugin::default(),
             PhysicsPlugins::default(),
             HanabiPlugin));
-        //app.insert_resource(SubstepCount(20));
+        app.insert_resource(HiScore { score: 2000.0, fault: false });
         app.add_plugins(splash_plugin);
         app.add_plugins(CameraPlugin);
         app.add_plugins(PlayerPlugin);
@@ -115,7 +121,10 @@ fn setup(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut effects: ResMut<Assets<EffectAsset>>,
     asset_server: Res<AssetServer>,
+    mut hi: ResMut<HiScore>
 ) {
+    hi.fault = false;
+
     // Light
     commands.spawn((
         PointLight {
@@ -417,11 +426,19 @@ impl Timey {
 fn on_stone_stopped_enter(
     mut cmds: Commands,
     stone: Query<(Entity, &Transform), With<Stone>>,
+    mut hi: ResMut<HiScore>
 ) {
     let mut dist: f32 = 999.0;
     if let Ok((e, st)) = stone.get_single() {
         cmds.entity(e).remove::<RigidBody>();
         dist = distance_to_target(st.translation);
+    }
+
+    let hiscore = hi.score;
+    let is_fault = hi.fault;
+    let is_hi = !is_fault && dist < hiscore;
+    if is_hi {
+        hi.score = dist;
     }
 
     cmds.spawn((
@@ -437,10 +454,38 @@ fn on_stone_stopped_enter(
         },
         OnGameScreen,
     ))
-        .with_child( Text::new("OVeR:"))
+        .with_child(
+            if is_fault {
+                Text::new("CheaT:")
+            } else {
+                Text::new("OVeR:")
+            })
         .with_child((
             Text::new(format!("{dist:.2}")),
         ));
+
+
+    cmds.spawn((
+        TextFont {
+            font_size: 48.0,
+            ..default()
+        },
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Percent(60.0),
+            left: Val::Percent(50.0),
+            ..default()
+        },
+        OnGameScreen,
+    ))
+        .with_child( Text::new("Best:"))
+        .with_child(
+            if is_hi {
+                Text::new("NEW LO SCORE!")
+            } else {
+                Text::new(format!("{hiscore:.2}"))
+            }
+        );
 
     cmds.spawn((
         Timey::new(20.0),
