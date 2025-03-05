@@ -53,23 +53,21 @@ pub fn cam_track_orbit(
     mut camera: Query<&mut PanOrbitCamera>,
 ){
     let Ok(stone_pos) = stone.get_single() else { return; };
-    let Ok(mut camera) = camera.get_single_mut() else { return; };
-    camera.target_focus = stone_pos.translation;
-    camera.force_update = true;
+
+    for mut camera in camera.iter_mut() {
+        camera.target_focus = stone_pos.translation;
+        camera.force_update = true;
+     }
 }
 
 fn add_atmos(
-    mut camera: Query<(Entity, &mut PanOrbitCamera, &mut Transform), With<PanOrbitCamera>>,
+    mut camera: Query<(Entity, &mut PanOrbitCamera), With<PanOrbitCamera>>,
     mut commands: Commands
 ) {
-    let Ok((e, mut cam, mut t)) = camera.get_single_mut() else { return; };
+    let Ok((e, mut cam)) = camera.get_single_mut() else { return; };
     commands.entity(e).insert(AtmosphereCamera::default());
 
-    // Don't thik this camera setting is working actually
-    t.translation.x = 0.0;
-    t.translation.y = STONE_RADIUS * 4.0;
-    t.translation.z =1000.0;// -STONE_RADIUS * 100.0;
-    t.look_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y);
+    cam.target_yaw = 3.1415;
 
     cam.force_update = true;
 }
