@@ -527,8 +527,12 @@ fn gameover_update(
 fn check_keys(
     keys: Res<ButtonInput<KeyCode>>,
     mut state: ResMut<NextState<GameState>>,
+    mut exit: EventWriter<AppExit>
 ) {
-    if keys.pressed(KeyCode::Escape) {
+    if keys.pressed(KeyCode::KeyR) {
         state.set(GameState::Splash);
+    }
+    if keys.pressed(KeyCode::Escape) {
+        exit.send(AppExit::Success);
     }
 }

@@ -16,12 +16,12 @@ pub struct TrackingCamera;
 
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, setup);
-        app.add_systems(Update, cam_track_orbit);
         app.add_plugins(AtmospherePlugin);
         app.add_plugins(PanOrbitCameraPlugin);
 
-        app.add_systems(OnEnter(GameState::InGame), add_atmos);
+        app.add_systems(Startup, setup);
+        app.add_systems(Update, cam_track_orbit);
+        app.add_systems(OnEnter(GameState::InGame), (add_atmos, reset_cam));
         app.add_systems(OnExit(GameState::InGame), remove_atmos);
     }
 }
@@ -54,28 +54,31 @@ fn setup(
 pub fn cam_track_orbit(
     stone: Query<&Transform, With<Stone>>,
     mut camera: Query<&mut PanOrbitCamera>,
+    keys: Res<ButtonInput<KeyCode>>,
 ){
     let Ok(stone_pos) = stone.get_single() else { return; };
 
-    for mut camera in camera.iter_mut() {
-        camera.target_focus = stone_pos.translation;
-        camera.force_update = true;
+    for mut cam in camera.iter_mut() {
+        cam.target_focus = stone_pos.translation;
+        cam.force_update = true;
+
+        if keys.pressed(KeyCode::ShiftLeft) {
+            cam.button_orbit = MouseButton::Left;
+            cam.modifier_orbit = Some(KeyCode::ShiftLeft);
+        } else {
+            cam.button_orbit = MouseButton::Middle;
+            cam.modifier_orbit = None;
+        }
      }
 }
 
 fn add_atmos(
-    mut camera: Query<(Entity, &mut PanOrbitCamera), With<PanOrbitCamera>>,
+    mut camera: Query<Entity, With<PanOrbitCamera>>,
     mut commands: Commands
 ) {
-    let Ok((e, mut cam)) = camera.get_single_mut() else { return; };
+    let Ok(e) = camera.get_single_mut() else { return; };
     commands.entity(e).insert(AtmosphereCamera::default());
-
-    cam.target_yaw = PI;
-    cam.target_pitch = 0.3805064; // i copied this from dgb printing... figure it out
-
-    cam.force_update = true;
 }
-
 
 fn remove_atmos(
     camera: Query<Entity, With<PanOrbitCamera>>,
@@ -83,4 +86,14 @@ fn remove_atmos(
 ) {
     let Ok(camera) = camera.get_single() else { return; };
     commands.entity(camera).remove::<AtmosphereCamera>();
+}
+
+fn reset_cam(
+    mut camera: Query<&mut PanOrbitCamera>,
+) {
+    let Ok(mut cam) = camera.get_single_mut() else { return; };
+    cam.target_yaw = PI;
+    cam.target_pitch = 0.3805064; // i copied this from dgb printing... figure it out
+    cam.target_radius = 107.7;
+    cam.force_update = true;
 }
