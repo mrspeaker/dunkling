@@ -1,26 +1,29 @@
 * TODO
-** [DONE] Don't allow "build" directly under stone
+** TODO Reset camera on game-over
+** TODO Fix 'dig-building' terrain sculpting
+- when you build, it digs out the edges making a moat
+** DONE Don't allow "build" directly under stone
 - to easy to cheese. Also physics goes nuts
-** [DONE] Figure out coordinates for realsy
+** DONE Figure out coordinates for realsy
 -- 0.0.0 is where you start. 0.0.SHEET_TOTAL - CHUNK_SIZE is target
 -- rigth is -ve, left is +ve (looking down sheet)
 - match coords to verts  
 ** [SORT OF DONE] Fix terrain joining
 - Off-by-one
-- sculpting doesn't go over chunk boundaries
-** [DONE] Score display when boulder stops
-** [DONE] Highscore.
+- TODO sculpting doesn't go over chunk boundaries
+** DONE Score display when boulder stops
+** DONE Highscore.
 ** [SORT OF DONE] Allow early restart
-- [DONE] hit ESC to restart
+- DONE hit ESC to restart
 - need to make pause menu for reals though
 ** [SORT OF DONE] Remove orbit cam when not orbit
 - or something to fix the jitter
 - Allow middel button orbit, allow left-shift button zoom
-** Refix initial angled chunks
+** TODO Refix initial angled chunks
 - maybe replace with mountain model
-** Steer boulder
+** TODO Steer boulder in air?
 - all click on edge as it rotates to steer
   - only in air? ground too?
-** [DONE] Somehow slow down faster at end
+** DONE Somehow slow down faster at end
 - added angulardamping (see constants)
 
