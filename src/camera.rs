@@ -36,7 +36,8 @@ fn setup(
             .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
         TrackingCamera,
         PanOrbitCamera {
-            modifier_orbit: Some(KeyCode::ShiftLeft),
+            button_orbit: MouseButton::Middle,
+            //modifier_orbit: Some(KeyCode::ShiftLeft),
             pan_sensitivity: 0.0, // disable panning
             zoom_lower_limit: 100.0,
             zoom_upper_limit: Some(500.0),
