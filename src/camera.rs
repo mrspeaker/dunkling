@@ -7,6 +7,8 @@ use crate::constants::STONE_RADIUS;
 use crate::game::GameState;
 use crate::stone::Stone;
 
+use std::f32::consts::*;
+
 pub struct CameraPlugin;
 
 #[derive(Component)]
@@ -67,7 +69,8 @@ fn add_atmos(
     let Ok((e, mut cam)) = camera.get_single_mut() else { return; };
     commands.entity(e).insert(AtmosphereCamera::default());
 
-    cam.target_yaw = 3.1415;
+    cam.target_yaw = PI;
+    cam.target_pitch = 0.3805064; // i copied this from dgb printing... figure it out
 
     cam.force_update = true;
 }

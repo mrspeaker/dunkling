@@ -1,5 +1,5 @@
 * TODO
-** TODO Reset camera on game-over
+** DONE Reset camera on game-over
 ** TODO Fix 'dig-building' terrain sculpting
 - when you build, it digs out the edges making a moat
 ** DONE Don't allow "build" directly under stone
@@ -18,11 +18,12 @@
 - need to make pause menu for reals though
 ** [SORT OF DONE] Remove orbit cam when not orbit
 - or something to fix the jitter
-- Allow middel button orbit, allow left-shift button zoom
+- Allow middel button orbit
+- allow left-shift button zoom
 ** TODO Refix initial angled chunks
-- maybe replace with mountain model
+- replace with epic mountain model
 ** TODO Steer boulder in air?
-- all click on edge as it rotates to steer
+- all click/rub on edge as it rotates to steer
   - only in air? ground too?
 ** DONE Somehow slow down faster at end
 - added angulardamping (see constants)
