@@ -1,6 +1,5 @@
 use avian3d::prelude::*;
 
-use bevy::input::mouse::MouseMotion;
 use bevy::{
     prelude::*,
     color::palettes::tailwind::*,
@@ -18,7 +17,7 @@ use crate::constants::{
     SHEET_PRE_AREA,
     STONE_X,
     STONE_Y,
-    STONE_Z,
+    STONE_Z, STONE_HURL_POWERUP_TIME,
 };
 
 const INIT_X:f32 = STONE_RADIUS * 10.0;
@@ -27,6 +26,12 @@ const INIT_X:f32 = STONE_RADIUS * 10.0;
 pub struct HurlStone {
     pub power: f32,
     pub angle: f32,
+}
+#[derive(Debug, Event)]
+pub struct HurlAimAndPower {
+    pub power: f32,
+    pub angle: f32,
+    pub reset: bool
 }
 
 pub struct PlayerPlugin;
@@ -39,9 +44,10 @@ impl Plugin for PlayerPlugin {
             draw_sheet_intersections
         ).run_if(in_state(GamePhase::Sculpting)));
         app.add_systems(Update, (
-            aim_mouse,
+            aim_and_powerup_for_hurl,
         ).run_if(in_state(GamePhase::Aiming)));
         app.add_systems(OnEnter(GamePhase::Aiming), setup_aim);
+        app.add_observer(do_powerup_viz);
     }
 }
 
@@ -187,71 +193,78 @@ fn draw_sheet_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gi
 
 #[derive(Default, Debug)]
 struct Aiming {
-    fired: bool,
     power_up: bool,
     power: f32,
     angle: f32
 }
 
-fn aim_mouse(
+fn aim_and_powerup_for_hurl(
     buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     windows: Query<&Window>,
     mut aim: Local<Aiming>,
     time: Res<Time>,
-    mut powerball: Query<&mut Transform, With<PowerBall>>,
-    mut thor: Query<&mut Transform, (With<BigThor>, Without<PowerBall>)>,
     mut commands: Commands
 ) {
-    if aim.fired {
-        return;
-    }
-
     if keys.pressed(KeyCode::ShiftLeft) {
         return;
     }
-
-    let Ok(mut t) = powerball.get_single_mut() else { return; };
-    let Ok(mut thor) = thor.get_single_mut() else { return; };
-
-    // Rotate angle based on cursor position
-    let window = windows.single();
-    window
-        .cursor_position()
-        .map(|v| { v / window.size() })
-        .and_then(|pos| {
-            aim.angle = pos.x - 0.5;
-            thor.rotation.y = aim.angle;
-            Some(true)
-            /*thor.get_single_mut().ok().map(|mut th| {
-                th.rotation.y = aim.angle;
-            })*/
-        });
-
     if buttons.just_pressed(MouseButton::Left) {
         aim.power_up = true;
     }
 
-    if aim.power_up  {
-        aim.power += time.delta_secs();
-        // Hacky way to show max power
-        // move weird ball and character... top at "max"
-        // TODO: calc max power for real, not just "about 3 seconds"
-        if aim.power < 3.0 {
-            t.translation.x -= time.delta_secs() * 70.0;
-            thor.rotation.x = -(aim.power / 10.0).sin();
-        }
-    }
+    // Set angle based on cursor position
+    let window = windows.single();
+    window
+        .cursor_position()
+        .map(|v| { v / window.size() })
+        .and_then(|pos| { Some(aim.angle = pos.x - 0.5) });
 
-    if aim.power_up && buttons.just_released(MouseButton::Left) {
-        if aim.power > 1.0 {
-            // trigger fire!
-            commands.trigger(HurlStone { power: aim.power, angle: aim.angle });
+    if aim.power_up  {
+        aim.power = (aim.power + time.delta_secs()).min(STONE_HURL_POWERUP_TIME);
+    }
+    let ratio = aim.power / STONE_HURL_POWERUP_TIME;
+
+    let mut fired = false;
+    if buttons.just_released(MouseButton::Left) {
+        if aim.power > STONE_HURL_POWERUP_TIME * 0.3 {
+            fired = true;
         }
-        thor.rotation.x = 0.0;
+        // Reset
         aim.power_up = false;
         aim.power = 0.0;
-        t.translation.x = INIT_X;
+    }
 
+    // Set Aiming params (or reset if fired)
+    commands.trigger(HurlAimAndPower {
+        power: if fired { 0.0 } else { ratio },
+        angle: if fired { 0.0 } else { aim.angle },
+        reset: fired
+    });
+    if fired {
+        commands.trigger(HurlStone { power: ratio, angle: aim.angle });
+    }
+
+}
+
+
+/// Move thor and powerball to show aim and power
+fn do_powerup_viz(
+    trigger: Trigger<HurlAimAndPower>,
+    mut powerball: Query<&mut Transform, With<PowerBall>>,
+    mut thor: Query<&mut Transform, (With<BigThor>, Without<PowerBall>)>
+
+) {
+    let Ok(mut pball) = powerball.get_single_mut() else { return; };
+    let Ok(mut thor) = thor.get_single_mut() else { return; };
+    let ev = trigger.event();
+    let ratio = ev.power;
+
+    if ev.reset {
+        thor.rotation.x = 0.0;
+    } else {
+        pball.translation.x = INIT_X - ratio * 200.0;
+        thor.rotation.x = -(ratio * 0.5).sin();
+        thor.rotation.y = ev.angle;
     }
 }

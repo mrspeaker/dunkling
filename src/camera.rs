@@ -3,7 +3,7 @@ use bevy_atmosphere::prelude::*;
 use bevy_atmosphere::settings::SkyboxCreationMode;
 use bevy_panorbit_camera::{PanOrbitCameraPlugin, PanOrbitCamera};
 
-use crate::constants::{STONE_RADIUS, STONE_Y};
+use crate::constants::STONE_RADIUS;
 use crate::game::GameState;
 use crate::stone::Stone;
 
@@ -48,38 +48,6 @@ fn setup(
     });
 }
 
-pub fn cam_track_(
-    //time: Res<Time>,
-    stone: Query<&Transform, (With<Stone>, Without<TrackingCamera>)>,
-    mut camera: Query<&mut Transform, With<TrackingCamera>>,
-){
-    //let dt = time.delta_secs();
-    let Ok(stone_pos) = stone.get_single() else { return; };
-
-    let Ok(mut camera) = camera.get_single_mut() else { return; };
-
-    let dist = stone_pos.translation.distance(camera.translation);
-/*    if stone_pos.translation.z > -5.0 && dist > STONE_RADIUS * 3.0  {
-
-        //let move_amount = camera.forward();
-        //camera.translation += move_amount * 5.0 * dt;
-        camera.look_at(
-            stone_pos.translation +
-                Vec3::new(0.0, STONE_RADIUS * 5.0, STONE_RADIUS * 3.0)
-                , Dir3::Y);
-    } else {
-*/
-    let move_amount = STONE_RADIUS * 10.0; //camera.forward() * 10.0;
-    camera.translation.y = stone_pos.translation.y + STONE_RADIUS * 2.0;
-    camera.translation.z = stone_pos.translation.z - move_amount ;//* 10.0 * dt;
-    camera.look_at(stone_pos.translation
-                   + Vec3::new(0.0, 0.0, STONE_RADIUS * 20.0), Dir3::Y);// + Vec3::new(0.0, 1.0, 0.0), Dir3::Y);
-    //  }
-
-
-}
-
-
 pub fn cam_track_orbit(
     stone: Query<&Transform, With<Stone>>,
     mut camera: Query<&mut PanOrbitCamera>,
@@ -94,18 +62,16 @@ fn add_atmos(
     mut camera: Query<(Entity, &mut PanOrbitCamera, &mut Transform), With<PanOrbitCamera>>,
     mut commands: Commands
 ) {
-    println!("add at");
     let Ok((e, mut cam, mut t)) = camera.get_single_mut() else { return; };
     commands.entity(e).insert(AtmosphereCamera::default());
-    println!("set tat");
 
+    // Don't thik this camera setting is working actually
     t.translation.x = 0.0;
     t.translation.y = STONE_RADIUS * 4.0;
     t.translation.z =1000.0;// -STONE_RADIUS * 100.0;
     t.look_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y);
 
     cam.force_update = true;
-
 }
 
 

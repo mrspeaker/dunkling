@@ -11,7 +11,7 @@ use bevy::{
     }
 };
 use perlin_noise::PerlinNoise;
-use std::f32::consts::*;
+// use std::f32::consts::*;
 
 use rand::prelude::*;
 
@@ -178,49 +178,6 @@ impl HeightMap {
         let cell_y = rng.gen_range(0..self.cell_h);
         (cell_x, cell_y)
     }
-
-    /// Bilinear interpolation to get height
-    fn get_height_at_pos(&self, x: f32, y:f32) -> Option<f32> {
-        // A-----B
-        // |--x,y|
-        // |  |  |
-        // C-----D
-        //
-        // p1 = Ax + x * (Bx - Ax)
-        // p2 = c + x * (d - c)
-        // h = p1 + y * (p2 - p1)
-
-        /*
-    v1 = original_img[x_floor, y_floor, :]
-    v2 = original_img[x_ceil, y_floor, :]
-    v3 = original_img[x_floor, y_ceil, :]
-        v4 = original_img[x_ceil, y_ceil, :]
-        #Estimate the pixel value q using pixel values of neighbours
-    q1 = v1 * (x_ceil - x) + v2 * (x - x_floor)
-    q2 = v3 * (x_ceil - x) + v4 * (x - x_floor)
-    q = q1 * (y_ceil - y) + q2 * (y - y_floor)
-    resized[i,j,:] = q
-        return resizde
-         */
-
-        let xo = x % self.rat_w;
-        let yo = x / self.rat_h;
-
-        // 1. Find the cells that surround (x, y)
-        let Some((cell_x, cell_y)) = self.get_cell_from_pos(x, y) else {
-            return None;
-        };
-        let a = self.map[cell_y][cell_x];
-        let b = self.map[cell_y][cell_x + 1];
-        let c = self.map[cell_y + 1][cell_x];
-        let d = self.map[cell_y + 1][cell_x + 1];
-
-//        let q1 = a * (
-
-        // 2. interpolate.
-        None
-    }
-
 }
 
 pub struct SheetPlugin;
@@ -502,7 +459,7 @@ fn terraform(mesh: &mut Mesh, map: &mut HeightMap, xo: i32, yo: i32, ratio: f32,
             if h > max { max = h; };
         }
     }
-    dbg!(min, max);
+    // dbg!(min, max);
 
     let cols: Vec<[f32; 4]> = vert_pos
         .iter()

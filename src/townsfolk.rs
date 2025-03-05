@@ -1,4 +1,3 @@
-use avian3d::prelude::*;
 use bevy::prelude::*;
 
 use rand::prelude::*;
@@ -58,7 +57,7 @@ fn setup(
 
 fn move_peeps(
     mut peeps: Query<(&mut Transform, &mut Target, &mut Speed), With<Peep>>,
-    height_map: Res<HeightMap>,
+    _height_map: Res<HeightMap>,
     time: Res<Time>
 ) {
     let dt = time.delta_secs();
@@ -83,7 +82,7 @@ fn move_peeps(
             }
         }
 
-        let pos = t.translation;
+        let _pos = t.translation;
         // TODO: wrong: x=0 is middle, not left of sheet.
         // need to transform this properly (get Sheet)
         /*

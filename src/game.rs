@@ -20,8 +20,7 @@ use crate::constants::{
     TARGET_CENTRE,
     STONE_ANGULAR_DAMPENING_INC_START_AT,
     STONE_ANGULAR_DAMPENING_INC_AMOUNT,
-    STONE_HURL_TIME_TO_POWER_MULTIPLIER,
-    STONE_HURL_AIM_ANGLE_MULTIPLIER
+    STONE_HURL_AIM_ANGLE_MULTIPLIER, STONE_MAX_VEL, SHOW_DBG
 };
 
 use crate::camera::CameraPlugin;
@@ -54,32 +53,6 @@ pub enum GamePhase {
     Sculpting,
     EndGame,
     StoneStopped,
-}
-
-#[derive(Component, Deref, DerefMut)]
-struct PhaseTimer {
-    #[deref]
-    timer: Timer,
-    state: Option<GameState>,
-    phase: Option<GamePhase>
-}
-
-impl PhaseTimer {
-    pub fn new_with_state(time: f32, state: GameState) -> Self {
-        Self {
-            timer: Timer::from_seconds(time, TimerMode::Once),
-            state: Some(state),
-            phase: None,
-        }
-    }
-
-    pub fn new_with_phase(time: f32, phase: GamePhase) -> Self {
-        Self {
-            timer: Timer::from_seconds(time, TimerMode::Once),
-            state: None,
-            phase: Some(phase),
-        }
-    }
 }
 
 #[derive(Component)]
@@ -124,7 +97,6 @@ impl Plugin for GamePlugin {
         app.add_systems(
             Update,
             (
-                timers_downdown,
                 track_and_dampen_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
                 text_power,
@@ -217,53 +189,46 @@ fn setup(
         SplashTimer(Timer::from_seconds(25.0, TimerMode::Once))
     );
 
-    // testing timer idea - needs way mor thought.
-    // should be more liek a state machine
-    commands.spawn(
-        PhaseTimer::new_with_phase(5.0, GamePhase::Sculpting)
-    );
+    if SHOW_DBG {
+        commands.spawn((
+            TextFont {
+                font_size: 18.0,
+                ..default()
+            },
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(5.0),
+                left: Val::Px(5.0),
+                ..default()
+            },
+            OnGameScreen,
+        ))
+            .with_child( Text::new("Distance:"))
+            .with_child((
+                Text::new(""),
+                TextDistance
+            ));
 
-    commands.spawn(
-         PhaseTimer::new_with_state(2.0, GameState::Splash)
-     );
+        commands.spawn((
+            TextFont {
+                font_size: 18.0,
+                ..default()
+            },
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(24.0),
+                left: Val::Px(5.0),
+                ..default()
+            },
+            OnGameScreen,
+        ))
+            .with_child( Text::new("Power:"))
+            .with_child((
+                Text::new(""),
+                TextPower
+            ));
 
-    commands.spawn((
-        TextFont {
-            font_size: 18.0,
-            ..default()
-        },
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(5.0),
-            left: Val::Px(5.0),
-            ..default()
-        },
-        OnGameScreen,
-    ))
-        .with_child( Text::new("Distance:"))
-        .with_child((
-            Text::new(""),
-            TextDistance
-        ));
-
-    commands.spawn((
-        TextFont {
-            font_size: 18.0,
-            ..default()
-        },
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(24.0),
-            left: Val::Px(5.0),
-            ..default()
-        },
-        OnGameScreen,
-    ))
-        .with_child( Text::new("Power:"))
-        .with_child((
-            Text::new(""),
-            TextPower
-        ));
+    }
 
     const BIG_THOR_PATH: &str = "models/mano.glb";
     // let (graph, node_indices) = AnimationGraph::from_clips([
@@ -375,33 +340,6 @@ pub fn countdown(
     }
 }
 
-fn timers_downdown(
-    time: Res<Time>,
-    mut timers: Query<(Entity, &mut PhaseTimer)>,
-    mut game_state: ResMut<NextState<GameState>>,
-    mut game_phase: ResMut<NextState<GamePhase>>,
-    mut commands: Commands,
-) {
-    for (e, mut pt) in timers.iter_mut() {
-        if pt.timer.tick(time.delta()).finished() {
-            match (pt.state.clone(), pt.phase.clone()) {
-                (Some(s), None) => {
-                    info!("would set game state");
-                    //game_state.set(s)
-                },
-                (None, Some(p)) => {
-                    info!("would set game phase");
-                    //game_phase.set(p)
-                },
-                _ => (),
-            }
-            commands.entity(e).despawn();
-        }
-    }
-
-}
-
-
 fn on_hurl_stone(
     trigger: Trigger<HurlStone>,
     mut phase: ResMut<NextState<GamePhase>>,
@@ -409,7 +347,7 @@ fn on_hurl_stone(
 ) {
     let Ok(mut vel) = stone.get_single_mut() else { return; };
     vel.x = trigger.event().angle * STONE_HURL_AIM_ANGLE_MULTIPLIER;
-    vel.z = trigger.event().power * STONE_HURL_TIME_TO_POWER_MULTIPLIER;
+    vel.z = trigger.event().power * STONE_MAX_VEL;
     vel.y = -100.0;
     info!("power: {} angle: {}", vel.z, vel.x);
     phase.set(GamePhase::Sculpting);
@@ -443,14 +381,13 @@ fn text_power(
 fn start_anims_on_load(
     trigger: Trigger<SceneInstanceReady>,
     thor: Query<Entity, With<BigThor>>,
-    mut players: Query<&mut AnimationPlayer> //, With<BigThor>>
+    mut _players: Query<&mut AnimationPlayer> //, With<BigThor>>
 ) {
     let e = trigger.entity();
     let Ok(thor) = thor.get_single() else { return; };
     if e != thor { return; };
 
-    info!("got bigthor");
-
+    info!("got bigthor gltf");
     /*    for mut player in players.iter_mut() {
         info!("attempt to pla");
         player.play(1.into()).repeat();
