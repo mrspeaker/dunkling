@@ -6,7 +6,12 @@ use bevy::{
     picking::pointer::PointerInteraction,
 };
 
-use crate::game::{GamePhase, OnGameScreen, Spotty, BigThor, HiScore};
+use crate::game::{
+    GamePhase,
+    OnGameScreen,
+    BigThor,
+    HiScore
+};
 use crate::sheet::{Sheet, TerrainSculpt};
 use crate::stone::Stone;
 
@@ -15,9 +20,7 @@ use crate::constants::{
     MIN_SCULT_DIST_FROM_STONE,
     STONE_RADIUS,
     SHEET_PRE_AREA,
-    STONE_X,
-    STONE_Y,
-    STONE_Z, STONE_HURL_POWERUP_TIME,
+    STONE_HURL_POWERUP_TIME,
 };
 
 const INIT_X:f32 = STONE_RADIUS * 10.0;
@@ -39,8 +42,8 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, (
-            terrain_mouse,
-            stone_update,
+            click_terrain,
+            cheat_control_stone,
             draw_sheet_intersections
         ).run_if(in_state(GamePhase::Sculpting)));
         app.add_systems(Update, (
@@ -78,7 +81,7 @@ struct LastMouse {
     pos: Vec3,
 }
 
-fn terrain_mouse(
+fn click_terrain(
     buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     camera_query: Single<(&Camera, &GlobalTransform)>,
@@ -92,7 +95,6 @@ fn terrain_mouse(
     let is_left = buttons.pressed(MouseButton::Left);
     let is_right = buttons.pressed(MouseButton::Right);
     let is_shift = keys.pressed(KeyCode::ShiftLeft);
-
     if is_shift || !(is_left || is_right) {
         return;
     }
@@ -114,7 +116,6 @@ fn terrain_mouse(
         .with_filter(&filter);
     let hits = ray_cast.cast_ray(ray, &settings);
     for (e, rmh) in hits.iter() {
-
         // Don't sculpt if too close to stone
         if let Ok(pos) = stone_pos_opt {
             let dist_to_stone = pos.translation.distance(rmh.point);
@@ -143,13 +144,12 @@ fn terrain_mouse(
     }
 }
 
-fn stone_update(
+fn cheat_control_stone(
     input: Res<ButtonInput<KeyCode>>,
-    mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
-    mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
+    mut stone: Query<&mut LinearVelocity, With<Stone>>,
     mut hi: ResMut<HiScore>
 ){
-    let Ok((mut stone_pos, mut vel_vec)) = stone.get_single_mut() else { return; };
+    let Ok(mut vel_vec) = stone.get_single_mut() else { return; };
 
     let power = 0.5;
     let mut cheat = false;
@@ -172,21 +172,6 @@ fn stone_update(
     if cheat {
         hi.fault = true;
     }
-
-    // update spot light
-    let Ok(mut spot_pos) = spotty.get_single_mut() else { return; };
-    spot_pos.translation = stone_pos.translation + Vec3::new(1.0, STONE_RADIUS * 2.0, 1.0);
-
-    let x_dist = stone_pos.translation.x.abs();
-    let y_dist = stone_pos.translation.y;
-    if x_dist > CHUNK_SIZE || y_dist < -STONE_RADIUS * 12.0 {
-        // TODO: this should transition to phase
-        stone_pos.translation = Vec3::new(STONE_X, STONE_Y, STONE_Z);
-        vel_vec.x = 0.0;
-        vel_vec.y = 0.0;
-        vel_vec.z = 0.0;
-    }
-
 }
 
 fn draw_sheet_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gizmos) {

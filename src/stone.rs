@@ -1,9 +1,10 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use crate::game::{GameState, OnGameScreen};
+use crate::game::{GameState, OnGameScreen, Spotty};
 
 use crate::constants::{
+    CHUNK_SIZE,
     STONE_ANGULAR_DAMPENING,
     STONE_DAMPENING,
     STONE_MAX_VEL,
@@ -20,6 +21,7 @@ pub struct StonePlugin;
 impl Plugin for StonePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), setup);
+        app.add_systems(Update, stone_update);
     }
 }
 
@@ -56,4 +58,27 @@ fn setup(
         Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
         TransformInterpolation
     ));
+}
+
+fn stone_update (
+    mut stone: Query<(&mut Transform, &mut LinearVelocity), With<Stone>>,
+    mut spotty: Query<&mut Transform, (With<Spotty>, Without<Stone>)>,
+){
+    let Ok((mut stone_pos, mut vel_vec)) = stone.get_single_mut() else { return; };
+    let Ok(mut spot_pos) = spotty.get_single_mut() else { return; };
+
+    spot_pos.translation = stone_pos.translation + Vec3::new(1.0, STONE_RADIUS * 2.0, 1.0);
+
+    let x_dist = stone_pos.translation.x.abs();
+    let y_dist = stone_pos.translation.y;
+    if x_dist > CHUNK_SIZE || y_dist < -STONE_RADIUS * 12.0 {
+        // TODO: this should transition to phase?
+        // don't think this is needed anymore?
+        // is it reset after fall off edge?
+        stone_pos.translation = Vec3::new(STONE_X, STONE_Y, STONE_Z);
+        vel_vec.x = 0.0;
+        vel_vec.y = 0.0;
+        vel_vec.z = 0.0;
+    }
+
 }
