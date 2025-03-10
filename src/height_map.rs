@@ -32,8 +32,6 @@ impl HeightMap {
             rat_h,
             map,
         };
-        dbg!("hm dims:", hm.map.len(), w, h, cell_w, cell_h);
-
         hm.terraform(&mut noise);
         hm
     }
