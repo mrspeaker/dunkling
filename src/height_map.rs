@@ -61,7 +61,11 @@ impl HeightMap {
                 let px =  ((x as f32 / self.cell_w as f32) - 0.5) * 2.0;
                 let pp = px.powf(12.0);
 
-                let ratio = y as f32 / self.cell_h as f32;
+                // Curve 1-( (x / 0.4) - 1.25) ^ 4
+                let perc = y as f32 / self.cell_h as f32;
+                let xx = ((perc / 0.48) - 1.0).powf(4.0);
+                let ratio = (1.0 - xx).max(0.0);
+
                 let height = h as f32 * terrain_height + (pp * 50.0);
                 self.map[y][x] = height * ratio;
             }
