@@ -13,7 +13,7 @@ pub const STONE_STOP_VEL: f32 = 0.5;
 
 pub const CHUNK_SIZE: f32 = 400.0;
 pub const NUM_CHUNKS: i32 = 15;
-pub const CELL_SIZE: usize = 100;
+pub const CELL_SIZE: usize = 140;
 
 pub const SHEET_TOTAL: f32 = CHUNK_SIZE * NUM_CHUNKS as f32;
 pub const SHEET_PRE_AREA: f32 = 50.0;

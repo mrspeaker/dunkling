@@ -1,6 +1,7 @@
 mod game;
 pub mod camera;
 pub mod constants;
+pub mod height_map;
 pub mod player;
 pub mod sheet;
 pub mod splash;
@@ -25,13 +26,15 @@ fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb(0.0, 0.0, 0.1)))
         .add_plugins(
-            DefaultPlugins.set(RenderPlugin {
-                render_creation: RenderCreation::Automatic(WgpuSettings {
-                    features: WgpuFeatures::POLYGON_MODE_LINE,
+            DefaultPlugins
+                .set(RenderPlugin {
+                    render_creation: RenderCreation::Automatic(WgpuSettings {
+                        features: WgpuFeatures::POLYGON_MODE_LINE,
+                        ..default()
+                    }),
                     ..default()
-                }),
-                ..default()
-            }),
+                })
+                .set(ImagePlugin::default_nearest())
         )
         .add_plugins(GamePlugin)
         .run();

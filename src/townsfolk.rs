@@ -8,7 +8,7 @@ use crate::constants::{
 };
 
 use crate::game::{GameState, OnGameScreen};
-use crate::sheet::HeightMap;
+use crate::height_map::HeightMap;
 
 #[derive(Component)]
 struct Peep;
