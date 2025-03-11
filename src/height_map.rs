@@ -21,7 +21,8 @@ impl HeightMap {
         let map = vec![vec![0.0; cell_w]; cell_h];
 
         dbg!(rat_w, rat_h);
-        let mut noise = Perlin::new(1);
+        let mut rng = rand::thread_rng();
+        let mut noise = Perlin::new(rng.next_u32());
 
         let mut hm = HeightMap {
             w,

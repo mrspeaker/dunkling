@@ -10,7 +10,6 @@ use bevy::{
         render_resource::PrimitiveTopology,
     }
 };
-// use std::f32::consts::*;
 
 use rand::prelude::*;
 
@@ -200,13 +199,27 @@ fn setup(
 
     commands.insert_resource(height_map);
 
-    for i in 0..NUM_CHUNKS {
+    for i in 0..NUM_CHUNKS -1{
         commands.queue(SpawnTerrain{
             pos: IVec2::new(0, i),
             bumpiness: if i == NUM_CHUNKS - 1 { 0.0 } else { i as f32 / NUM_CHUNKS as f32 }
         });
     }
 
+    commands
+        .spawn((
+            Name::new("Hole"),
+            OnGameScreen,
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/hole.glb"))),
+            RigidBody::Static,
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            Transform::from_xyz(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE)
+        ));
+
+
+    /*
     // Endzone chunk (the target)
     let endzone_mat = materials.add(StandardMaterial {
         base_color_texture: Some(asset_server.load("target.png")),
@@ -225,7 +238,7 @@ fn setup(
                 (0.0_f32).to_radians(),
             )),
         OnGameScreen
-    ));
+    ));*/
 
 
     // Add some trees
