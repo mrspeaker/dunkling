@@ -32,15 +32,18 @@ impl Plugin for TownsfolkPlugin {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+//    height_map: Res<HeightMap>,
 ) {
+//    dbg!(height_map);
     // Lil people
     let mut rng = rand::thread_rng();
-    let w = CHUNK_SIZE / 2.0;
-    for _ in 0..200 {
+    let w = CHUNK_SIZE;
+    for i in 0..200 {
         let pos = Vec3::new(
-            rng.gen_range(-w..w),
+            rng.gen_range(-w..0.0),
             0.0,
-            rng.gen_range(0.0..SHEET_TOTAL));
+            rng.gen_range(0.0..SHEET_TOTAL-CHUNK_SIZE*2.0));
+
         commands
             .spawn((
                 Name::new("Person1"),
@@ -51,6 +54,22 @@ fn setup(
                         .load(GltfAssetLabel::Scene(0).from_asset("models/person.glb"))),
                 Target(None),
                 Speed(0.0),
+                Transform::from_xyz(pos.x, pos.y, pos.z)));
+
+        // Some buildings. TODO: put them somehwere else
+        commands
+            .spawn((
+                Name::new("House"),
+                OnGameScreen,
+                SceneRoot(
+                    asset_server
+                        .load(GltfAssetLabel::Scene(0).from_asset(
+                            if i % 3 == 0 {
+                                "models/cab.glb"
+                            } else if i % 3 == 1 {
+                                "models/shop.glb"
+                            } else {"models/house.glb"}
+                        ))),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
 }
