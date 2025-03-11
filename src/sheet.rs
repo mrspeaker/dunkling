@@ -4,11 +4,7 @@ use bevy::{
     math::Affine2,
     prelude::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
-    render::{
-        mesh::{Indices, VertexAttributeValues, PlaneMeshBuilder},
-        render_asset::RenderAssetUsages,
-        render_resource::PrimitiveTopology,
-    }
+    render::mesh::VertexAttributeValues
 };
 
 use rand::prelude::*;
@@ -48,10 +44,13 @@ impl Command for SpawnTerrain {
         let xo = self.pos.x * CELL_SIZE as i32;
         let yo = self.pos.y * CELL_SIZE as i32;
 
-        let mut plane = build_plane(Plane3d::default()
-                                    .mesh()
-                                    .size(CHUNK_SIZE, CHUNK_SIZE)
-        );
+        //meshes.add(Plane3d::default().mesh().size(50.0, 50.0).subdivisions(10))
+
+        let mut plane = Plane3d::default()
+            .mesh()
+            .size(CHUNK_SIZE, CHUNK_SIZE)
+            .subdivisions(CELL_SIZE as u32 - 2)
+            .build();
 
         let hm = world
             .get_resource_mut::<HeightMap>()
@@ -145,10 +144,11 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     // Add the initial slanty chunk mesh
-    let plane = build_plane(Plane3d::default()
+    let plane = Plane3d::default()
         .mesh()
         .size(CHUNK_SIZE, CHUNK_SIZE)
-    );
+        .build();
+
     let texture_handle = asset_server.load_with_settings(
         "textures/Ground037_2K-JPG_Color.jpg",
         |s: &mut _| {
@@ -219,28 +219,6 @@ fn setup(
         ));
 
 
-    /*
-    // Endzone chunk (the target)
-    let endzone_mat = materials.add(StandardMaterial {
-        base_color_texture: Some(asset_server.load("target.png")),
-        alpha_mode: AlphaMode::Blend,
-        ..default()
-    });
-    commands.spawn((
-        Mesh3d(meshes.add(Rectangle::new(CHUNK_SIZE, CHUNK_SIZE))),
-        MeshMaterial3d(endzone_mat),
-        Transform::from_xyz(0.0, 0.5, SHEET_TOTAL - CHUNK_SIZE)
-            .with_rotation(Quat::from_euler(
-                // YXZ = "yaw"/"pitch"/"roll"
-                EulerRot::YXZ,
-                (180.0_f32).to_radians(),
-                (-90.0_f32).to_radians(),
-                (0.0_f32).to_radians(),
-            )),
-        OnGameScreen
-    ));*/
-
-
     // Add some trees
     let mut rng = rand::thread_rng();
     for _ in 0..100 {
@@ -262,33 +240,6 @@ fn setup(
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
 
-}
-
-fn set_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>) {
-    if hm_x >= height_map.cell_w ||
-        hm_y >= height_map.cell_h {
-           return;
-        }
-    let map = &mut height_map.map;
-    (*map)[hm_y][hm_x] = value;
-    verts[hm_y * CELL_SIZE + hm_x][1] = value;
-}
-
-fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>, chunk_idx: usize) {
-    if hm_x >= height_map.cell_w ||
-        hm_y >= height_map.cell_h {
-           return;
-        }
-
-    let map = &mut height_map.map;
-    let zoff = hm_y + (chunk_idx * CELL_SIZE);
-    let cur = (*map)[zoff][hm_x];
-    let next = (cur + value).max(0.0);
-    (*map)[zoff][hm_x] = next;
-    let idx = hm_y * CELL_SIZE + hm_x;
-    if idx < CELL_SIZE * CELL_SIZE {
-        verts[idx][1] = next;
-    }
 }
 
 pub fn vert_height_to_color(cols: &Vec<[f32; 3]>) -> Vec<[f32; 4]> {
@@ -313,6 +264,23 @@ pub fn vert_height_to_color(cols: &Vec<[f32; 3]>) -> Vec<[f32; 4]> {
         .collect()
 }
 
+
+fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>, chunk_idx: usize) {
+    if hm_x >= height_map.cell_w ||
+        hm_y >= height_map.cell_h {
+           return;
+        }
+
+    let map = &mut height_map.map;
+    let zoff = hm_y + (chunk_idx * CELL_SIZE);
+    let cur = (*map)[zoff][hm_x];
+    let next = (cur + value).max(0.0);
+    (*map)[zoff][hm_x] = next;
+    let idx = hm_y * CELL_SIZE + hm_x;
+    if idx < CELL_SIZE * CELL_SIZE {
+        verts[idx][1] = next;
+    }
+}
 
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
@@ -416,51 +384,4 @@ fn sync_plane_with_heightmap(mesh: &mut Mesh, map: &HeightMap, xo: i32, yo: i32)
     );
 
     mesh.compute_normals();
-}
-
-fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
-    let size = mb.plane.half_size * 2.0;
-    let z_vertex_count = CELL_SIZE as u32;
-    let x_vertex_count = CELL_SIZE as u32;
-    let num_vertices = (z_vertex_count * x_vertex_count) as usize;
-    let num_indices = ((z_vertex_count - 1) * (x_vertex_count - 1) * 6) as usize;
-
-    let mut positions: Vec<Vec3> = Vec::with_capacity(num_vertices);
-    let mut normals: Vec<[f32; 3]> = Vec::with_capacity(num_vertices);
-    let mut uvs: Vec<[f32; 2]> = Vec::with_capacity(num_vertices);
-    let mut indices: Vec<u32> = Vec::with_capacity(num_indices);
-
-    let rotation = Quat::from_rotation_arc(Vec3::Y, *mb.plane.normal);
-
-    for z in 0..z_vertex_count {
-        for x in 0..x_vertex_count {
-            let tx = x as f32 / (x_vertex_count - 1) as f32;
-            let tz = z as f32 / (z_vertex_count - 1) as f32;
-            let pos = rotation * Vec3::new((-0.5 + tx) * size.x, 0.0, (-0.5 + tz) * size.y);
-            positions.push(pos);
-            normals.push(mb.plane.normal.to_array());
-            uvs.push([tx, tz]);
-        }
-    }
-
-    for z in 0..z_vertex_count - 1 {
-        for x in 0..x_vertex_count - 1 {
-            let quad = z * x_vertex_count + x;
-            indices.push(quad + x_vertex_count + 1);
-            indices.push(quad + 1);
-            indices.push(quad + x_vertex_count);
-            indices.push(quad);
-            indices.push(quad + x_vertex_count);
-            indices.push(quad + 1);
-        }
-    }
-
-    Mesh::new(
-        PrimitiveTopology::TriangleList,
-        RenderAssetUsages::default(),
-    )
-        .with_inserted_indices(Indices::U32(indices))
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
 }
