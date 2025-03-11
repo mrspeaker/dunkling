@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use perlin_noise::PerlinNoise;
+use noise::{NoiseFn, Perlin, Seedable};
 use crate::constants::MAX_TERRAIN_HEIGHT;
 use rand::prelude::*;
 
@@ -21,7 +21,7 @@ impl HeightMap {
         let map = vec![vec![0.0; cell_w]; cell_h];
 
         dbg!(rat_w, rat_h);
-        let mut noise = PerlinNoise::new();
+        let mut noise = Perlin::new(1);
 
         let mut hm = HeightMap {
             w,
@@ -36,40 +36,36 @@ impl HeightMap {
         hm
     }
 
-    pub fn terraform(&mut self, noise: &mut PerlinNoise) {
-        let size = 0.05;
-        let terrain_height = MAX_TERRAIN_HEIGHT;// * ratio;
+    pub fn terraform(&mut self, noise: &mut Perlin) {
+
+        let noise_size = 0.0005;
 
         for y in 0..self.cell_h {
             for x in 0..self.cell_w {
-                let mut h = noise.get3d([
-                    x as f64 * size,
-                    y as f64 * size,
+                let noise_val  = noise.get([
+                    (x as f64 * noise_size * 20.0),
+                    (y as f64 * noise_size * 20.0),
                     0.0,
-                ]);
-                //println!("{} {} = {} {}", xo, ((x as i32 + xo) as f64) * size, yo, ((y as i32 + yo) as f64) * size);
-                let h2 = noise.get3d([
-                    (x as f64 * size * 20.0),
-                    (y as f64 * size * 20.0),
-                    0.0,
-                ]) * 0.05;
-                h += h2;
-                h = h.max(0.5) - 0.5;
+                ]) * 0.5;
+                let noise_height = noise_val.max(0.0) as f32 * MAX_TERRAIN_HEIGHT;
 
                 // Make "halfpipe"
-                //let pp = 1.0 - ((x as f32 / map.cell_w as f32) * 3.1415).sin();
                 let px =  ((x as f32 / self.cell_w as f32) - 0.5) * 2.0;
-                let pp = px.powf(12.0);
+                let halfpipe = px.powf(12.0) * 50.0;
 
-                // Curve 1-( (x / 0.4) - 1.25) ^ 4
-                let perc = y as f32 / self.cell_h as f32;
-                let xx = ((perc / 0.48) - 1.0).powf(4.0);
-                let ratio = (1.0 - xx).max(0.0);
+                let height = noise_height  + halfpipe;
 
-                let height = h as f32 * terrain_height + (pp * 50.0);
-                self.map[y][x] = height * ratio;
+                // Increase slope along sheet z.
+                // - Starts flat, goes bumpy, ends flat.
+                // Curve: 1 - ((x / 0.4) - 1.25) ^ 4
+                let z_percent = y as f32 / self.cell_h as f32;
+                let curve = 1.0 - ((z_percent / 0.48) - 1.0).powf(4.0);
+                let slope = curve.max(0.0); // Clip floor
+
+                self.map[y][x] = height * slope;
             }
         }
+
     }
 
     /// Given a SHEET x and y coordinate,

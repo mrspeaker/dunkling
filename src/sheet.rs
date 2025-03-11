@@ -10,7 +10,6 @@ use bevy::{
         render_resource::PrimitiveTopology,
     }
 };
-use perlin_noise::PerlinNoise;
 // use std::f32::consts::*;
 
 use rand::prelude::*;
@@ -43,15 +42,6 @@ struct SpawnTerrain {
     bumpiness: f32,
 }
 
-#[derive(Resource)]
-struct PerlinInst(Box<PerlinNoise>);
-impl PerlinInst {
-    pub fn new() -> Self {
-        let perlin_noise = Box::new(PerlinNoise::new());
-        Self(perlin_noise)
-    }
-}
-
 impl Command for SpawnTerrain {
     fn apply(self, world: &mut World) {
 
@@ -66,7 +56,7 @@ impl Command for SpawnTerrain {
 
         let hm = world
             .get_resource_mut::<HeightMap>()
-            .expect("Hieght map should exist");
+            .expect("Height map should exist");
 
         sync_plane_with_heightmap(&mut plane, &hm, xo, yo);
 
@@ -107,13 +97,18 @@ impl Command for SpawnTerrain {
             .expect("Mesh Assets should exist")
             .add(Cuboid::new(CHUNK_SIZE, 50.0, CHUNK_SIZE));
 
+        let mat_ground = world
+            .get_resource_mut::<Assets<StandardMaterial>>()
+            .expect("StandardMaterial Assets to exist")
+            .add(Color::BLACK);
+
         // Stop from falling through ground
         world.spawn((
             OnGameScreen,
             RigidBody::Static,
             Friction::new(10.0),
             Mesh3d(mesh_underground),
-            MeshMaterial3d(mat.clone()),
+            MeshMaterial3d(mat_ground),
             ColliderConstructor::Cuboid {
                 x_length: CHUNK_SIZE,
                 y_length: 50.0,
@@ -249,7 +244,7 @@ fn setup(
                 SceneRoot(
                     asset_server
                         .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
-                RigidBody::Static,
+                RigidBody::Dynamic,
                 Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
@@ -282,6 +277,29 @@ fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, 
         verts[idx][1] = next;
     }
 }
+
+pub fn vert_height_to_color(cols: &Vec<[f32; 3]>) -> Vec<[f32; 4]> {
+    cols
+        .iter()
+        .map(|[_, h, _]| {
+            let h = *h;// / terrain_height;
+            let col;
+            if h > 40.0 {
+                col = Color::srgb(1.0, 0.9, 1.0);
+            } else if h > 18.0 {
+                col = Color::srgb(0.6, 0.5, 0.0);
+            } else if h > 7.0 {
+                col = Color::srgb(0.4, 0.9, 0.1);
+            } else if h > 1.0{
+                col = Color::srgb(0.4, 0.8, 0.1);
+            } else {
+                col = Color::srgb(0.26,0.7, 0.119);
+            }
+            col.to_linear().to_f32_array()
+        })
+        .collect()
+}
+
 
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
@@ -331,24 +349,7 @@ pub fn terrain_sculpt(
     }
 
     // Re-colorize the chunk verts
-    let cols: Vec<[f32; 4]> = vert_pos
-        .iter()
-        .map(|[_, h, _]| {
-            let h = *h;// / terrain_height;
-            if h > 7.0 {
-                Color::WHITE.to_linear().to_f32_array()
-            } else if h > 1.0{
-                Color::srgb(0.4, 0.3, 0.1)
-                    .to_linear()
-                    .to_f32_array()
-            } else {
-                Color::linear_rgb(0.26,0.9, 0.119)
-                //Color::srgb(0.1, 0.5, 0.0)
-                    .to_linear()
-                    .to_f32_array()
-            }
-        })
-        .collect();
+    let cols = vert_height_to_color(&vert_pos);
 
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_COLOR,
@@ -356,6 +357,8 @@ pub fn terrain_sculpt(
     );
 
     mesh.compute_normals();
+
+    // Re-add collider to match new terrain
     commands.entity(e).remove::<Collider>();
     commands.entity(e).insert(ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES));
 
@@ -380,9 +383,7 @@ fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
 }
 
 fn sync_plane_with_heightmap(mesh: &mut Mesh, map: &HeightMap, xo: i32, yo: i32) {
-
     let vert = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
-
     let VertexAttributeValues::Float32x3(vert_pos) = vert else {
         panic!("Unexpected vertex format, expected Float32x3.");
     };
@@ -395,32 +396,13 @@ fn sync_plane_with_heightmap(mesh: &mut Mesh, map: &HeightMap, xo: i32, yo: i32)
     }
 
     // Set the colors
-    let cols: Vec<[f32; 4]> = vert_pos
-        .iter()
-        .map(|[_, h, _]| {
-            let h = *h;// / terrain_height;
-            if h > 7.0 {
-                Color::WHITE.to_linear().to_f32_array()
-            } else if h > 1.0{
-                Color::srgb(0.4, 0.3, 0.1)
-                    .to_linear()
-                    .to_f32_array()
-            } else {
-                Color::linear_rgb(0.26,0.9, 0.119)
-                //Color::srgb(0.1, 0.5, 0.0)
-                    .to_linear()
-                    .to_f32_array()
-            }
-        })
-        .collect();
-
+    let cols = vert_height_to_color(vert_pos);
     mesh.insert_attribute(
         Mesh::ATTRIBUTE_COLOR,
         cols,
     );
 
     mesh.compute_normals();
-
 }
 
 fn build_plane(mb: PlaneMeshBuilder) -> Mesh {
