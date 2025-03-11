@@ -315,16 +315,17 @@ pub fn terrain_sculpt(
     let h = STONE_RADIUS * 0.1 * if up { 0.5 } else { -1.0 };
 
     // change the heights of surrounding verts
-    add_height(c1x, c1y, h * 0.3, &mut *height_map, &mut *vert_pos, chunk_idx);
+    let amount = 0.08;
+    //add_height(c1x, c1y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
     let ns = get_neighbours(c1x, c1y);
     for (x, y) in ns {
-        add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos, chunk_idx);
+        add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
         let ns = get_neighbours(x, y);
         for (x, y) in ns {
-            add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos, chunk_idx);
+            add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
             let ns = get_neighbours(x, y);
             for (x, y) in ns {
-                add_height(x, y, h * 0.3, &mut *height_map, &mut *vert_pos, chunk_idx);
+                add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
             }
         }
     }
@@ -348,18 +349,29 @@ pub fn terrain_sculpt(
 fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
     let mut ns: Vec<(usize,usize)> = vec![];
 
+    // Back
+    if z > 0 {
+        if x > 0 {
+            ns.push((x - 1, z - 1)); // left
+        }
+        ns.push((x, z - 1)); // mid
+        ns.push((x + 1, z - 1)); // right
+    }
+
+    // Middle
     if x > 0 {
         ns.push((x - 1, z)); // left
     }
-    if x < CELL_SIZE {
-        ns.push((x + 1, z)); // right
+    ns.push((x, z)); // mid
+    ns.push((x + 1, z)); // right
+
+    // Front
+    if x > 0 {
+        ns.push((x - 1, z + 1)); // left
     }
-    if z > 0 {
-        ns.push((x, z - 1)); // back
-    }
-    if z < CELL_SIZE {
-        ns.push((x, z + 1))
-    }
+    ns.push((x, z + 1)); // mid
+    ns.push((x + 1, z + 1)); // right
+
     return ns;
 }
 
