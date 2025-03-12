@@ -9,6 +9,7 @@ use crate::constants::{
 
 use crate::game::{GameState, OnGameScreen};
 use crate::height_map::HeightMap;
+use crate::sheet::TerrainCreated;
 
 #[derive(Component)]
 struct Peep;
@@ -24,25 +25,26 @@ pub struct TownsfolkPlugin;
 
 impl Plugin for TownsfolkPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::InGame), setup);
+        // app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
+        app.add_observer(spawn_townsfolk);
     }
 }
 
-fn setup(
+pub fn spawn_townsfolk(
+    _trigger: Trigger<TerrainCreated>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-//    height_map: Res<HeightMap>,
+    height_map: Res<HeightMap>
 ) {
-//    dbg!(height_map);
-    // Lil people
+    // get height_map
     let mut rng = rand::thread_rng();
     let w = CHUNK_SIZE;
     for i in 0..200 {
-        let pos = Vec3::new(
-            rng.gen_range(-w/2.0..w/2.0),
-            0.0,
-            rng.gen_range(0.0 .. SHEET_TOTAL - CHUNK_SIZE * 2.0));
+        let x = rng.gen_range(0.0..w); // right(0) to left (w)
+        let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
+        let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
+        let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
 
         commands
             .spawn((

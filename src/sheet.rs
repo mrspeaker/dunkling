@@ -33,6 +33,9 @@ pub struct TerrainSculpt {
     pub p1: Vec3,
 }
 
+#[derive(Debug, Event)]
+pub struct TerrainCreated;
+
 struct SpawnTerrain {
     pos: IVec2,
     bumpiness: f32,
@@ -145,6 +148,7 @@ fn setup(
     asset_server: Res<AssetServer>,
 ) {
     // Add the initial slanty chunk mesh
+    /*
     let plane = Plane3d::default()
         .mesh()
         .size(CHUNK_SIZE, CHUNK_SIZE)
@@ -189,7 +193,8 @@ fn setup(
             .with_rotation(Quat::from_rotation_x(0.2)),
         //Wireframe,
         Sheet
-    ));
+));
+    */
 
     // Create the height map then spawn the chunks
     let height_map = HeightMap::new(
@@ -199,6 +204,7 @@ fn setup(
         CELL_SIZE * NUM_CHUNKS as usize);
 
     commands.insert_resource(height_map);
+    commands.trigger(TerrainCreated);
 
     for i in 0..NUM_CHUNKS -1{
         commands.queue(SpawnTerrain{

@@ -6,7 +6,9 @@
 - to easy to cheese. Also physics goes nuts
 ** DONE Figure out coordinates for realsy
 -- 0.0.0 is where you start. 0.0.SHEET_TOTAL - CHUNK_SIZE is target
+-- x = 0 is center of sheet, w/2 = left  of sheet, -w/2 = right of sheet
 -- rigth is -ve, left is +ve (looking down sheet)
+-- could flip this, but too much work now
 - match coords to verts  
 ** [SORT OF DONE] Fix terrain joining
 - Off-by-one
