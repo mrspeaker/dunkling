@@ -1,3 +1,6 @@
+use std::f32::consts::PI;
+
+use avian3d::prelude::{RigidBody, Collider};
 use bevy::prelude::*;
 
 use rand::prelude::*;
@@ -25,7 +28,6 @@ pub struct TownsfolkPlugin;
 
 impl Plugin for TownsfolkPlugin {
     fn build(&self, app: &mut App) {
-        // app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
         app.add_observer(spawn_townsfolk);
     }
@@ -45,6 +47,7 @@ pub fn spawn_townsfolk(
         let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
         let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
+        let rot = rng.gen_range(0.0..PI*2.0);
 
         commands
             .spawn((
@@ -72,13 +75,34 @@ pub fn spawn_townsfolk(
                                 "models/shop.glb"
                             } else {"models/house.glb"}
                         ))),
+                Transform::from_xyz(pos.x, pos.y, pos.z).with_rotation(Quat::from_rotation_y(rot))
+            ));
+    }
+
+    // Add some trees
+    let mut rng = rand::thread_rng();
+    for _ in 0..100 {
+        let x = rng.gen_range(0.0..w); // right(0) to left (w)
+        let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
+        let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
+        let pos = Vec3::new(x - w / 2.0, y, z - w / 2.0);
+
+        commands
+            .spawn((
+                Name::new("Tree"),
+                OnGameScreen,
+                SceneRoot(
+                    asset_server
+                        .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
+                RigidBody::Static,
+                Collider::cuboid(1.0, 1.0, 1.7),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
 }
 
 fn move_peeps(
     mut peeps: Query<(&mut Transform, &mut Target, &mut Speed), With<Peep>>,
-    _height_map: Res<HeightMap>,
+    height_map: Res<HeightMap>,
     time: Res<Time>
 ) {
     let dt = time.delta_secs();
@@ -103,16 +127,12 @@ fn move_peeps(
             }
         }
 
-        let _pos = t.translation;
-        // TODO: wrong: x=0 is middle, not left of sheet.
-        // need to transform this properly (get Sheet)
-        /*
-        if let Some(h) = height_map.pos_to_height(pos.x + SHEET_WIDTH / 2.0, pos.z) {
-            t.translation.y = h*1.01;
+        if let Some(h) = height_map.pos_to_height(pos.x + CHUNK_SIZE / 2.0, pos.z + CHUNK_SIZE / 2.0) {
+            t.translation.y = h;
         } else {
             // out of bounds
             target.0 = None;
-        }*/
+        }
 
     }
 }

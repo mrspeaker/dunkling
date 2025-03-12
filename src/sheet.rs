@@ -225,28 +225,6 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE)
         ));
 
-
-    // Add some trees
-    let mut rng = rand::thread_rng();
-    for _ in 0..100 {
-        let pos = Vec3::new(
-            rng.gen_range((-CHUNK_SIZE / 4.0)..(CHUNK_SIZE/ 4.0)),
-            0.0,
-            rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE)
-        );
-
-        commands
-            .spawn((
-                Name::new("Tree"),
-                OnGameScreen,
-                SceneRoot(
-                    asset_server
-                        .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
-                RigidBody::Dynamic,
-                Collider::cuboid(1.0, 1.0, 1.7),
-                Transform::from_xyz(pos.x, pos.y, pos.z)));
-    }
-
 }
 
 pub fn vert_height_to_color(cols: &Vec<[f32; 3]>) -> Vec<[f32; 4]> {
