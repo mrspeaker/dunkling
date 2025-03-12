@@ -92,8 +92,9 @@ fn click_terrain(
     mut last_mouse: Local<LastMouse>,
     mut commands: Commands,
 ) {
+    let is_super = keys.pressed(KeyCode::SuperLeft);
     let is_left = buttons.pressed(MouseButton::Left);
-    let is_right = buttons.pressed(MouseButton::Right);
+    let is_right = buttons.pressed(MouseButton::Right) || is_super;
     let is_shift = keys.pressed(KeyCode::ShiftLeft);
     if is_shift || !(is_left || is_right) {
         return;

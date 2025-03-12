@@ -20,7 +20,6 @@ impl HeightMap {
         let rat_h = h / cell_h as f32;
         let map = vec![vec![0.0; cell_w]; cell_h];
 
-        dbg!(rat_w, rat_h);
         let mut rng = rand::thread_rng();
         let mut noise = Perlin::new(rng.next_u32());
 
@@ -48,6 +47,7 @@ impl HeightMap {
                     (y as f64 * noise_size * 20.0),
                     0.0,
                 ]) * 0.5;
+
                 let noise_height = noise_val.max(0.0) as f32 * MAX_TERRAIN_HEIGHT;
 
                 // Make "halfpipe"

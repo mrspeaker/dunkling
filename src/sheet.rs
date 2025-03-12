@@ -13,9 +13,10 @@ use crate::constants::{
     CELL_SIZE,
     SHEET_PRE_AREA,
     CHUNK_SIZE,
-    STONE_RADIUS,
     SHEET_TOTAL,
-    NUM_CHUNKS
+    NUM_CHUNKS,
+    SCULPT_RAISE_POWER,
+    SCULPT_LOWER_POWER
 };
 
 use crate::game::{GameState, OnGameScreen};
@@ -288,7 +289,6 @@ pub fn terrain_sculpt(
     mut meshes: ResMut<Assets<Mesh>>,
     mut height_map: ResMut<HeightMap>,
     mut commands: Commands,
-
 ) {
     let Ok((e, mesh_handle, t)) = mesh_query.get(trigger.entity()) else {
         return;
@@ -312,12 +312,13 @@ pub fn terrain_sculpt(
     let p1 = point - t.translation + Vec3::new(CHUNK_SIZE * 0.5, 0.0, CHUNK_SIZE * 0.5);
     let Some((c1x, c1y)) = height_map.get_cell_from_pos(p1.x, p1.z) else { return; };
 
-    let h = STONE_RADIUS * 0.1 * if up { 0.5 } else { -1.0 };
+    let h = if up { SCULPT_RAISE_POWER } else { -SCULPT_LOWER_POWER };
 
     // change the heights of surrounding verts
     let amount = 0.8;
     for n in get_neighbours_radius(c1x, c1y, 4) {
-        add_height(n.0, n.1, h * amount * n.2, &mut *height_map, &mut *vert_pos, chunk_idx);
+        let dist = 1.0 - (1.0 - n.2).powi(3);// n.2 * n.2; // 0 - 1
+        add_height(n.0, n.1, h * amount * dist, &mut *height_map, &mut *vert_pos, chunk_idx);
     }
 
     // Re-colorize the chunk verts

@@ -40,9 +40,9 @@ fn setup(
     let w = CHUNK_SIZE;
     for i in 0..200 {
         let pos = Vec3::new(
-            rng.gen_range(-w..0.0),
+            rng.gen_range(-w/2.0..w/2.0),
             0.0,
-            rng.gen_range(0.0..SHEET_TOTAL-CHUNK_SIZE*2.0));
+            rng.gen_range(0.0 .. SHEET_TOTAL - CHUNK_SIZE * 2.0));
 
         commands
             .spawn((
