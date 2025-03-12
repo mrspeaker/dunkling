@@ -315,19 +315,9 @@ pub fn terrain_sculpt(
     let h = STONE_RADIUS * 0.1 * if up { 0.5 } else { -1.0 };
 
     // change the heights of surrounding verts
-    let amount = 0.08;
-    //add_height(c1x, c1y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
-    let ns = get_neighbours(c1x, c1y);
-    for (x, y) in ns {
-        add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
-        let ns = get_neighbours(x, y);
-        for (x, y) in ns {
-            add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
-            let ns = get_neighbours(x, y);
-            for (x, y) in ns {
-                add_height(x, y, h * amount, &mut *height_map, &mut *vert_pos, chunk_idx);
-            }
-        }
+    let amount = 0.8;
+    for n in get_neighbours_radius(c1x, c1y, 4) {
+        add_height(n.0, n.1, h * amount * n.2, &mut *height_map, &mut *vert_pos, chunk_idx);
     }
 
     // Re-colorize the chunk verts
@@ -346,33 +336,16 @@ pub fn terrain_sculpt(
 
 }
 
-fn get_neighbours(x: usize, z: usize) -> Vec<(usize, usize)> {
-    let mut ns: Vec<(usize,usize)> = vec![];
-
-    // Back
-    if z > 0 {
-        if x > 0 {
-            ns.push((x - 1, z - 1)); // left
+pub fn get_neighbours_radius(x: usize, y: usize, r: usize) -> Vec<(usize, usize, f32)> {
+    let mut ns: Vec<(usize,usize,f32)> = vec![];
+    let max_dist = ((r as f32 * r as f32) + (r as f32 * r as f32)).sqrt();
+    for j in y.saturating_sub(r)..=y.saturating_add(r) {
+        for i in x.saturating_sub(r)..=x.saturating_add(r) {
+            let dist = ((i as f32 - x as f32).powi(2) + (j as f32 - y as f32).powi(2)).sqrt();
+            ns.push((i, j, 1.0 - (dist / max_dist)));
         }
-        ns.push((x, z - 1)); // mid
-        ns.push((x + 1, z - 1)); // right
     }
-
-    // Middle
-    if x > 0 {
-        ns.push((x - 1, z)); // left
-    }
-    ns.push((x, z)); // mid
-    ns.push((x + 1, z)); // right
-
-    // Front
-    if x > 0 {
-        ns.push((x - 1, z + 1)); // left
-    }
-    ns.push((x, z + 1)); // mid
-    ns.push((x + 1, z + 1)); // right
-
-    return ns;
+    ns
 }
 
 fn sync_plane_with_heightmap(mesh: &mut Mesh, map: &HeightMap, xo: i32, yo: i32) {

@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     // use super::*;
-    use crate::sheet::HeightMap;
+    use crate::height_map::HeightMap;
+    use crate::sheet::get_neighbours_radius;
     
     #[test]
     fn pos_to_cell() {
@@ -32,4 +33,35 @@ mod tests {
         //let h = height_map.pos_to_height(-0.1, 0.0);
         //assert_eq!(h, None);
     }
+
+    #[test]
+    fn get_neighbours() {
+        let n = get_neighbours_radius(2, 2, 1);
+        assert_eq!(n.len(), 9);
+        assert_eq!(n[0], (1, 1, 0.0));
+        assert_eq!(n[1], (2, 1, 0.29289323));
+        assert_eq!(n[4], (2, 2, 1.0));
+        assert_eq!(n[8], (3, 3, 0.0));
+    }
+
+    #[test]
+    fn get_neighbours_sat() {
+        let n = get_neighbours_radius(0, 0, 1);
+        assert_eq!(n.len(), 4);
+        assert_eq!(n[0], (0, 0, 1.0));
+        assert_eq!(n[3], (1, 1, 0.0));
+    }
+    #[test]
+    fn get_neighbours_wide() {
+        let n = get_neighbours_radius(0, 0, 2);
+        assert_eq!(n.len(), 9);
+        assert_eq!(n[8], (2, 2, 0.0));
+    }
+    #[test]
+    fn get_neighbours_vwide() {
+        let n = get_neighbours_radius(0, 0, 3);
+        assert_eq!(n.len(), 16);
+        assert_eq!(n[15], (3, 3, 0.0));
+    }
 }
+
