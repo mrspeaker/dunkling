@@ -101,6 +101,16 @@ impl HeightMap {
         (cell_x, cell_y)
     }
 
+    pub fn get_random_pos_between_height(&self, min_h: f32, max_h: f32) -> (f32, f32) {
+        loop {
+            let cell = self.get_random_cell();
+            let h = self.map[cell.1][cell.0];
+            if h >= min_h && h <= max_h {
+                return (cell.0 as f32 * self.rat_w, cell.1 as f32 * self.rat_h)
+            }
+        }
+    }
+
     pub fn add_height(&mut self, hm_x: usize, hm_y: usize, value: f32, chunk_idx: usize) {
         if hm_x >= self.cell_w ||
             hm_y >= self.cell_h {

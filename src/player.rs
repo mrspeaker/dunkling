@@ -25,11 +25,28 @@ use crate::constants::{
 
 const INIT_PBALL_X:f32 = STONE_RADIUS * 10.0;
 
+#[derive(Default, Debug)]
+struct Aiming {
+    power_up: bool,
+    power: f32,
+    angle: f32
+}
+
+#[derive(Default)]
+struct LastMouse {
+    idx: usize,
+    pos: Vec3,
+}
+
+#[derive(Component)]
+struct PowerBall;
+
 #[derive(Debug, Event)]
 pub struct HurlStone {
     pub power: f32,
     pub angle: f32,
 }
+
 #[derive(Debug, Event)]
 pub struct HurlAimAndPower {
     pub power: f32,
@@ -51,11 +68,7 @@ pub fn player_plugin(app: &mut App) {
     ).run_if(in_state(GamePhase::Sculpting)));
 
     app.add_observer(do_powerup_viz);
-    
 }
-
-#[derive(Component)]
-struct PowerBall;
 
 fn setup_aim(
     mut commands: Commands,
@@ -63,6 +76,7 @@ fn setup_aim(
     mut materials: ResMut<Assets<StandardMaterial>>,
 
 ) {
+    // Add powerball meter
     commands.spawn((
         OnGameScreen,
         PowerBall,
@@ -72,13 +86,6 @@ fn setup_aim(
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
         Transform::from_xyz(INIT_PBALL_X, STONE_RADIUS * 9.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
     ));
-
-}
-
-#[derive(Default)]
-struct LastMouse {
-    idx: usize,
-    pos: Vec3,
 }
 
 fn click_terrain(
@@ -184,13 +191,6 @@ fn draw_sheet_intersections(pointers: Query<&PointerInteraction>, mut gizmos: Gi
         gizmos.sphere(point, 5.0, RED_500);
         gizmos.arrow(point, point + normal.normalize() * 5.0, PINK_100);
     }
-}
-
-#[derive(Default, Debug)]
-struct Aiming {
-    power_up: bool,
-    power: f32,
-    angle: f32
 }
 
 fn aim_and_powerup_for_hurl(

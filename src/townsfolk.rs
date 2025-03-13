@@ -37,12 +37,13 @@ pub fn spawn_townsfolk(
     // get height_map
     let mut rng = rand::thread_rng();
     let w = CHUNK_SIZE;
-    for i in 0..200 {
+
+    // Add the people
+    for _ in 0..200 {
         let x = rng.gen_range(0.0..w); // right(0) to left (w)
         let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
         let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
-        let rot = rng.gen_range(0.0..PI*2.0);
 
         commands
             .spawn((
@@ -55,6 +56,17 @@ pub fn spawn_townsfolk(
                 Target(None),
                 Speed(0.0),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
+    }
+
+    // Add the things
+    for i in 0..200 {
+
+        let (x, z) = height_map.get_random_pos_between_height(0.1, 1.0);
+        //let x = rng.gen_range(0.0..w); // right(0) to left (w)
+        //let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
+        let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
+        let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
+        let rot = 0.0;//rng.gen_range(0.0..PI*2.0);
 
         // Some buildings. TODO: put them somehwere else
         commands

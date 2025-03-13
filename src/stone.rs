@@ -40,7 +40,7 @@ fn setup(
     commands.spawn((
         Stone,
         OnGameScreen,
-        //RigidBody::Dynamic,
+        //RigidBody::Dynamic, // Gets added when you fire
         Collider::sphere(STONE_RADIUS),
         LinearDamping(STONE_DAMPENING),
         AngularDamping(STONE_ANGULAR_DAMPENING),
@@ -48,12 +48,12 @@ fn setup(
         Friction::new(1.0),
         //CollisionMargin(0.1),
         //Mass(weight),
-        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),//160.0)),
+        LinearVelocity(Vec3::new(0.0, 0.0, 160.0)),
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
-        MeshMaterial3d(material_handle),//materials.add(Color::srgb_u8(124, 144, 255))),
+        MeshMaterial3d(material_handle),
         Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
-        TransformInterpolation
+        TransformInterpolation // smooths the movement
     ));
 }
 
@@ -77,5 +77,4 @@ fn stone_update (
         vel_vec.y = 0.0;
         vel_vec.z = 0.0;
     }
-
 }
