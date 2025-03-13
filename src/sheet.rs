@@ -1,5 +1,6 @@
 use avian3d::prelude::*;
 use bevy::{
+    color::palettes::css::SILVER,
     prelude::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
 };
@@ -10,7 +11,7 @@ use crate::constants::{
     SHEET_TOTAL,
     NUM_CHUNKS,
     SCULPT_RAISE_POWER,
-    SCULPT_LOWER_POWER
+    SCULPT_LOWER_POWER, TARGET_CENTRE
 };
 use crate::chunk::{SpawnChunk, sync_chunk_with_heightmap};
 use crate::game::{GameState, OnGameScreen};
@@ -29,18 +30,14 @@ pub struct TerrainSculpt {
 #[derive(Debug, Event)]
 pub struct TerrainCreated;
 
-pub struct SheetPlugin;
-
-impl Plugin for SheetPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(WireframePlugin);
-        app.insert_resource(WireframeConfig {
-            global: false,
-            default_color: Color::linear_rgb(0.1,0.1, 0.),
-        });
-        app.add_systems(OnEnter(GameState::InGame), setup);
-        app.add_observer(terrain_sculpt);
-    }
+pub fn sheet_plugin(app: &mut App) {
+    app.add_plugins(WireframePlugin);
+    app.insert_resource(WireframeConfig {
+        global: false,
+        default_color: Color::linear_rgb(0.1,0.1, 0.),
+    });
+    app.add_systems(OnEnter(GameState::InGame), setup);
+    app.add_observer(terrain_sculpt);
 }
 
 fn setup(
@@ -98,7 +95,7 @@ fn setup(
 ));
     */
 
-    // Create the height map then spawn the chunks
+    // Create the height map then spawn the chunk meshes
     let height_map = HeightMap::new(
         CHUNK_SIZE,
         CHUNK_SIZE * NUM_CHUNKS as f32,
@@ -114,6 +111,7 @@ fn setup(
         });
     }
 
+    // Endzone hole
     commands
         .spawn((
             Name::new("Hole"),
@@ -125,6 +123,15 @@ fn setup(
             ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
             Transform::from_xyz(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE)
         ));
+
+    // Endzone flag pole
+    commands.spawn((
+        Mesh3d(meshes.add(Cylinder::default())),
+        MeshMaterial3d(materials.add(Color::from(SILVER))),
+        Transform::from_translation(TARGET_CENTRE)
+            .with_scale(Vec3::new(5.0, 200.0, 5.0)),
+        OnGameScreen
+    ));
 
 }
 
@@ -167,6 +174,24 @@ pub fn terrain_sculpt(
 
 }
 
+
+/// Calculates the neighbours within the given radius around the point `(x, y)`
+///
+/// This function takes three arguments: two indices representing a point in a 2D grid,
+/// and the radius of the circular area of interest. It returns a vector 
+/// of tuples of the cell's x and y indicie,s and a normalized distance
+/// from the reference point to the cell.
+///
+/// # Arguments
+///
+/// * `x` - The x-coordinate of the point.
+/// * `y` - The y-coordinate of the point.
+/// * `r` - The radius around the point.
+///
+/// # Returns
+///
+/// A Vector of tuples where each element is a tuple containing the x, y indices of a cell and its normalized distance from the reference point.
+///
 pub fn get_neighbours_radius(x: usize, y: usize, r: usize) -> Vec<(usize, usize, f32)> {
     let mut ns: Vec<(usize,usize,f32)> = vec![];
     let max_dist = ((r as f32 * r as f32) + (r as f32 * r as f32)).sqrt();

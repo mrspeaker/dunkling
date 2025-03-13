@@ -1,6 +1,13 @@
 use bevy::prelude::*;
 
-use super::game::{despawn_screen, GameState};
+use crate::timey::Timey;
+use crate::game::{despawn_screen, GameState};
+
+#[derive(Component)]
+struct OnSplashScreen;
+
+#[derive(Component)]
+pub struct SplashTimer;
 
 pub fn splash_plugin(app: &mut App) {
     app
@@ -8,12 +15,6 @@ pub fn splash_plugin(app: &mut App) {
         .add_systems(Update, countdown.run_if(in_state(GameState::Splash)))
         .add_systems(OnExit(GameState::Splash), despawn_screen::<OnSplashScreen>);
 }
-
-#[derive(Component)]
-struct OnSplashScreen;
-
-#[derive(Resource, Deref, DerefMut)]
-pub struct SplashTimer(pub Timer);
 
 fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     let thor = asset_server.load("thor.png");
@@ -38,7 +39,12 @@ fn splash_setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             ));
         });
 
-    commands.insert_resource(SplashTimer(Timer::from_seconds(15.0, TimerMode::Once)));
+    commands.spawn((
+        Timey::new(15.0),
+        SplashTimer,
+        OnSplashScreen
+    ));
+
 }
 
 
@@ -46,12 +52,14 @@ pub fn countdown(
     mut game_state: ResMut<NextState<GameState>>,
     buttons: Res<ButtonInput<MouseButton>>,
     time: Res<Time>,
-    mut timer: ResMut<SplashTimer>,
+    mut timers: Query<&mut Timey, With<SplashTimer>>,
 ) {
-    if timer.tick(time.delta()).finished() {
-        game_state.set(GameState::InGame);
-    }
-    if timer.elapsed_secs() > 0.5 && buttons.just_pressed(MouseButton::Left) {
-        game_state.set(GameState::InGame);
+    for mut timer in timers.iter_mut() {
+        if timer.tick(time.delta()) {
+            game_state.set(GameState::InGame);
+        }
+        if timer.elapsed().as_secs() > 1 && buttons.just_pressed(MouseButton::Left) {
+            game_state.set(GameState::InGame);
+        }
     }
 }

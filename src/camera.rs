@@ -9,21 +9,16 @@ use crate::stone::Stone;
 
 use std::f32::consts::*;
 
-pub struct CameraPlugin;
+pub fn camera_plugin(app: &mut App) {
+    app.add_plugins((
+        AtmospherePlugin,
+        PanOrbitCameraPlugin
+    ));
 
-#[derive(Component)]
-pub struct TrackingCamera;
-
-impl Plugin for CameraPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_plugins(AtmospherePlugin);
-        app.add_plugins(PanOrbitCameraPlugin);
-
-        app.add_systems(Startup, setup);
-        app.add_systems(Update, cam_track_orbit);
-        app.add_systems(OnEnter(GameState::InGame), (add_atmos, reset_cam));
-        app.add_systems(OnExit(GameState::InGame), remove_atmos);
-    }
+    app.add_systems(Startup, setup);
+    app.add_systems(OnEnter(GameState::InGame), (add_atmos, reset_cam));
+    app.add_systems(Update, cam_track_orbit);
+    app.add_systems(OnExit(GameState::InGame), remove_atmos);
 }
 
 fn setup(
@@ -34,10 +29,8 @@ fn setup(
         Camera3d::default(),
         Transform::from_xyz(0.0, STONE_RADIUS * 4.0, -STONE_RADIUS * 10.0)
             .looking_at(Vec3::new(0.0, STONE_RADIUS / 2.0, 0.0), Dir3::Y),
-        TrackingCamera,
         PanOrbitCamera {
             button_orbit: MouseButton::Middle,
-            //modifier_orbit: Some(KeyCode::ShiftLeft),
             pan_sensitivity: 0.0, // disable panning
             zoom_lower_limit: 100.0,
             zoom_upper_limit: Some(500.0),

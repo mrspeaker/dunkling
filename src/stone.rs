@@ -17,12 +17,9 @@ use crate::constants::{
 #[derive(Component)]
 pub struct Stone;
 
-pub struct StonePlugin;
-impl Plugin for StonePlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::InGame), setup);
-        app.add_systems(Update, stone_update);
-    }
+pub fn stone_plugin(app: &mut App) {
+    app.add_systems(OnEnter(GameState::InGame), setup);
+    app.add_systems(Update, stone_update);
 }
 
 fn setup(

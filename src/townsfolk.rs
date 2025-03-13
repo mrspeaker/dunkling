@@ -23,14 +23,9 @@ struct Target(Option<Vec2>);
 #[derive(Component)]
 struct Speed(f32);
 
-
-pub struct TownsfolkPlugin;
-
-impl Plugin for TownsfolkPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
-        app.add_observer(spawn_townsfolk);
-    }
+pub fn townsfolk_plugin(app: &mut App) {
+    app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
+    app.add_observer(spawn_townsfolk);
 }
 
 pub fn spawn_townsfolk(

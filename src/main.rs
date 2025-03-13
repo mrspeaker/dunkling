@@ -7,6 +7,7 @@ pub mod player;
 pub mod sheet;
 pub mod splash;
 pub mod stone;
+pub mod timey;
 pub mod townsfolk;
 
 #[cfg(test)]

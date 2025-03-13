@@ -23,7 +23,7 @@ use crate::constants::{
     STONE_HURL_POWERUP_TIME,
 };
 
-const INIT_X:f32 = STONE_RADIUS * 10.0;
+const INIT_PBALL_X:f32 = STONE_RADIUS * 10.0;
 
 #[derive(Debug, Event)]
 pub struct HurlStone {
@@ -37,21 +37,21 @@ pub struct HurlAimAndPower {
     pub reset: bool
 }
 
-pub struct PlayerPlugin;
+pub fn player_plugin(app: &mut App) {
+    app.add_systems(OnEnter(GamePhase::Aiming), setup_aim);
 
-impl Plugin for PlayerPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, (
-            click_terrain,
-            cheat_control_stone,
-            draw_sheet_intersections
-        ).run_if(in_state(GamePhase::Sculpting)));
-        app.add_systems(Update, (
-            aim_and_powerup_for_hurl,
-        ).run_if(in_state(GamePhase::Aiming)));
-        app.add_systems(OnEnter(GamePhase::Aiming), setup_aim);
-        app.add_observer(do_powerup_viz);
-    }
+    app.add_systems(Update, (
+        aim_and_powerup_for_hurl,
+    ).run_if(in_state(GamePhase::Aiming)));
+
+    app.add_systems(Update, (
+        click_terrain,
+        cheat_control_stone,
+        draw_sheet_intersections
+    ).run_if(in_state(GamePhase::Sculpting)));
+
+    app.add_observer(do_powerup_viz);
+    
 }
 
 #[derive(Component)]
@@ -70,7 +70,7 @@ fn setup_aim(
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(INIT_X, STONE_RADIUS * 9.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
+        Transform::from_xyz(INIT_PBALL_X, STONE_RADIUS * 9.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
     ));
 
 }
@@ -258,7 +258,7 @@ fn do_powerup_viz(
     if ev.reset {
         thor.rotation.x = 0.0;
     } else {
-        pball.translation.x = INIT_X - ratio * 200.0;
+        pball.translation.x = INIT_PBALL_X - ratio * 200.0;
         thor.rotation.x = -(ratio * 0.5).sin();
         thor.rotation.y = ev.angle;
     }

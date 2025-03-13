@@ -7,7 +7,6 @@ use bevy::{
 use bevy_hanabi::prelude::*;
 
 use std::f32::consts::*;
-use std::time::Duration;
 
 use crate::constants::{
     SHEET_PRE_AREA,
@@ -20,12 +19,13 @@ use crate::constants::{
     STONE_HURL_AIM_ANGLE_MULTIPLIER, STONE_MAX_VEL, SHOW_DBG
 };
 
-use crate::camera::CameraPlugin;
-use crate::player::{PlayerPlugin, HurlStone};
-use crate::sheet::SheetPlugin;
-use crate::splash::{splash_plugin, SplashTimer};
-use crate::stone::{Stone, StonePlugin};
-use crate::townsfolk::TownsfolkPlugin;
+use crate::camera::camera_plugin;
+use crate::player::{player_plugin, HurlStone};
+use crate::sheet::sheet_plugin;
+use crate::splash::splash_plugin;
+use crate::stone::{Stone, stone_plugin};
+use crate::timey::Timey;
+use crate::townsfolk::townsfolk_plugin;
 
 pub struct GamePlugin;
 
@@ -53,6 +53,12 @@ pub enum GamePhase {
 }
 
 #[derive(Component)]
+struct StoneStoppedTimer;
+
+#[derive(Component)]
+pub struct AimTooSlowTimer;
+
+#[derive(Component)]
 pub struct TextDistance;
 #[derive(Component)]
 pub struct TextPower;
@@ -72,41 +78,45 @@ fn distance_to_target(pos: Vec3) -> f32 {
 
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
+        // Library plugins
         app.add_plugins((
             MeshPickingPlugin,
             //PhysicsDebugPlugin::default(),
             PhysicsPlugins::default(),
             HanabiPlugin));
+
+        // Game plugins
+        app.add_plugins((
+            camera_plugin,
+            player_plugin,
+            sheet_plugin,
+            splash_plugin,
+            stone_plugin,
+            townsfolk_plugin
+        ));
+
         app.insert_resource(HiScore { score: 2000.0, fault: false });
-        app.add_plugins(splash_plugin);
-        app.add_plugins(CameraPlugin);
-        app.add_plugins(PlayerPlugin);
-        app.add_plugins(SheetPlugin);
-        app.add_plugins(StonePlugin);
-        app.add_plugins(TownsfolkPlugin);
         app.init_state::<GameState>()
             .add_sub_state::<GamePhase>();
 
+        // Systems
         app.add_systems(OnEnter(GameState::InGame), setup);
         app.add_systems(OnEnter(GamePhase::Sculpting), fire_stone);
         app.add_systems(OnEnter(GamePhase::StoneStopped), on_stone_stopped_enter);
-
-        app.add_systems(Update, (
-            check_keys,
-            countdown.run_if(in_state(GamePhase::Aiming))
-        ));
-        app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
-
         app.add_systems(
             Update,
             (
+                check_keys,
+                aim_countdown.run_if(in_state(GamePhase::Aiming)),
+                gameover_update.run_if(in_state(GamePhase::EndGame)),
+                stone_stopped_update.run_if(in_state(GamePhase::StoneStopped)),
                 track_and_dampen_stone.run_if(in_state(GamePhase::Sculpting)),
                 text_distance,
                 text_power,
-                stone_stopped_update.run_if(in_state(GamePhase::StoneStopped)),
-                gameover_update.run_if(in_state(GamePhase::EndGame)),
             ));
+        app.add_systems(OnExit(GameState::InGame), despawn_screen::<OnGameScreen>);
 
+        // Triggers
         app.add_observer(on_hurl_stone);
         app.add_observer(start_anims_on_load);
     }
@@ -120,23 +130,10 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut hi: ResMut<HiScore>
 ) {
+    // Reset cheat check
     hi.fault = false;
 
-    // Light
-    commands.spawn((
-        PointLight {
-            intensity: 10_000_000.0,
-            range: 3000.0,
-            radius: 3000.0,
-            color: BLUE.into(),
-            shadows_enabled: true,
-            ..default()
-        },
-        Spotty,
-        OnGameScreen
-    ));
-
-    // Thor
+    // Thor plane
     let texture_handle = asset_server.load("thor.png");
     let aspect = 2.0;//0.25;
     let quad_width = STONE_RADIUS * 10.0;
@@ -162,12 +159,29 @@ fn setup(
         OnGameScreen
     ));
 
-    // Lights
+
+    // Spot light
+    commands.spawn((
+        PointLight {
+            intensity: 10_000_000.0,
+            range: 3000.0,
+            radius: 3000.0,
+            color: BLUE.into(),
+            shadows_enabled: true,
+            ..default()
+        },
+        Spotty,
+        OnGameScreen
+    ));
+
+
+    // Ambient light
     commands.insert_resource(AmbientLight {
         color: Color::linear_rgb(1.0,1.0, 1.0),
         brightness: 500.0,
     });
 
+    // Sun light
     commands.spawn((
         DirectionalLight {
             illuminance: light_consts::lux::CLEAR_SUNRISE,
@@ -182,18 +196,12 @@ fn setup(
         OnGameScreen
     ));
 
+    // Auto fire when aiming (take too long)
     commands.spawn((
-        Mesh3d(meshes.add(Cylinder::default())),
-        MeshMaterial3d(materials.add(Color::from(SILVER))),
-        Transform::from_translation(TARGET_CENTRE)
-            .with_scale(Vec3::new(5.0, 200.0, 5.0)),
+        Timey::new(25.0),
+        AimTooSlowTimer,
         OnGameScreen
     ));
-
-    // Splash screen timer.
-    commands.insert_resource(
-        SplashTimer(Timer::from_seconds(25.0, TimerMode::Once))
-    );
 
     if SHOW_DBG {
         commands.spawn((
@@ -237,13 +245,6 @@ fn setup(
     }
 
     const BIG_THOR_PATH: &str = "models/mano.glb";
-    // let (graph, node_indices) = AnimationGraph::from_clips([
-    //     asset_server.load(GltfAssetLabel::Animation(0).from_asset(BIG_THOR_PATH)),
-    // ]);
-    // dbg!(graph.clone(), node_indices);
-    // graphs.add(graph);
-
-
     commands
         .spawn((
             Name::new("BigThor"),
@@ -256,7 +257,7 @@ fn setup(
                 .with_scale(Vec3::splat(25.0))
         ));
 
-
+    // Particles...
     // Define a color gradient from red to transparent black
     let mut gradient = Gradient::new();
     gradient.add_key(0.0, Vec4::new(0.5, 0.5, 0.5, 1.0));
@@ -337,13 +338,15 @@ pub fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut comm
     }
 }
 
-pub fn countdown(
+pub fn aim_countdown(
     mut game_state: ResMut<NextState<GamePhase>>,
     time: Res<Time>,
-    mut timer: ResMut<SplashTimer>,
+    mut timers: Query<&mut Timey, With<AimTooSlowTimer>>,
 ) {
-    if timer.tick(time.delta()).finished() {
-        game_state.set(GamePhase::Sculpting);
+    for mut timer in timers.iter_mut() {
+        if timer.tick(time.delta()) {
+            game_state.set(GamePhase::Sculpting);
+        }
     }
 }
 
@@ -399,26 +402,6 @@ fn start_anims_on_load(
         info!("attempt to pla");
         player.play(1.into()).repeat();
     }*/
-}
-
-#[derive(Component)]
-struct Timey {
-    timer: Timer,
-}
-impl Timey {
-    pub fn new(duration: f32) -> Self {
-        Self {
-            timer: Timer::from_seconds(duration, TimerMode::Once)
-        }
-    }
-
-    pub fn tick(&mut self, delta: Duration) -> bool {
-        self.timer.tick(delta).just_finished()
-    }
-
-    pub fn elapsed(&self) -> Duration {
-        self.timer.elapsed()
-    }
 }
 
 fn on_stone_stopped_enter(
@@ -487,6 +470,7 @@ fn on_stone_stopped_enter(
 
     cmds.spawn((
         Timey::new(20.0),
+        StoneStoppedTimer,
         OnGameScreen,
     ));
 
@@ -494,7 +478,7 @@ fn on_stone_stopped_enter(
 
 fn stone_stopped_update(
     mut state: ResMut<NextState<GamePhase>>,
-    mut timers: Query<&mut Timey>,
+    mut timers: Query<&mut Timey, With<StoneStoppedTimer>>,
     buttons: Res<ButtonInput<MouseButton>>,
     keys: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
