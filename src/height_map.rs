@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use noise::{NoiseFn, Perlin, Seedable};
-use crate::constants::MAX_TERRAIN_HEIGHT;
+use crate::constants::{MAX_TERRAIN_HEIGHT, CELL_SIZE};
 use rand::prelude::*;
 
 #[derive(Resource, Clone, Debug)]
@@ -77,8 +77,9 @@ impl HeightMap {
         let cell_y = (y / self.rat_h).floor() as usize;
 
         // Check if cell position is out of map bounds
-        if cell_x >= self.cell_w || cell_y >= self.cell_h {
-            dbg!(cell_x, self.cell_w, cell_y, self.cell_h);
+        if cell_x >= self.cell_w || cell_y >= self.cell_h ||
+        x < 0.0 || y < 0.0 {
+            //info!(cell_x, self.cell_w, cell_y, self.cell_h);
             None // out of bound
         } else {
             Some((cell_x, cell_y))
@@ -99,4 +100,18 @@ impl HeightMap {
         let cell_y = rng.gen_range(0..self.cell_h);
         (cell_x, cell_y)
     }
+
+    pub fn add_height(&mut self, hm_x: usize, hm_y: usize, value: f32, chunk_idx: usize) {
+        if hm_x >= self.cell_w ||
+            hm_y >= self.cell_h {
+                return;
+            }
+
+        //let map = &mut self.map;
+        let zoff = hm_y + (chunk_idx * CELL_SIZE);
+        let cur = (*self.map)[zoff][hm_x];
+        let next = (cur + value).max(0.0);
+        (*self.map)[zoff][hm_x] = next;
+    }
+
 }

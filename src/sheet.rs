@@ -249,24 +249,6 @@ pub fn vert_height_to_color(cols: &Vec<[f32; 3]>) -> Vec<[f32; 4]> {
         .collect()
 }
 
-
-fn add_height(hm_x: usize, hm_y: usize, value: f32, height_map: &mut HeightMap, verts: &mut Vec<[f32; 3]>, chunk_idx: usize) {
-    if hm_x >= height_map.cell_w ||
-        hm_y >= height_map.cell_h {
-           return;
-        }
-
-    let map = &mut height_map.map;
-    let zoff = hm_y + (chunk_idx * CELL_SIZE);
-    let cur = (*map)[zoff][hm_x];
-    let next = (cur + value).max(0.0);
-    (*map)[zoff][hm_x] = next;
-    let idx = hm_y * CELL_SIZE + hm_x;
-    if idx < CELL_SIZE * CELL_SIZE {
-        verts[idx][1] = next;
-    }
-}
-
 pub fn terrain_sculpt(
     trigger: Trigger<TerrainSculpt>,
     mesh_query: Query<(Entity, &Mesh3d, &Transform), With<Sheet>>,
@@ -278,12 +260,12 @@ pub fn terrain_sculpt(
         return;
     };
 
-    let mesh = meshes.get_mut(mesh_handle).unwrap();
-    let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
+    let mut mesh = meshes.get_mut(mesh_handle).unwrap();
+    //let uv_attribute = mesh.attribute_mut(Mesh::ATTRIBUTE_POSITION).unwrap();
 
-    let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
-        panic!("Unexpected vertex format, expected Float32x3.");
-    };
+    //let VertexAttributeValues::Float32x3(vert_pos) = uv_attribute else {
+    //    panic!("Unexpected vertex format, expected Float32x3.");
+    //};
 
     let ev = trigger.event();
     let up = ev.up;
@@ -302,18 +284,9 @@ pub fn terrain_sculpt(
     let amount = 0.8;
     for n in get_neighbours_radius(c1x, c1y, 4) {
         let dist = 1.0 - (1.0 - n.2).powi(3);// n.2 * n.2; // 0 - 1
-        add_height(n.0, n.1, h * amount * dist, &mut *height_map, &mut *vert_pos, chunk_idx);
+        height_map.add_height(n.0, n.1, h * amount * dist, chunk_idx);
     }
-
-    // Re-colorize the chunk verts
-    let cols = vert_height_to_color(&vert_pos);
-
-    mesh.insert_attribute(
-        Mesh::ATTRIBUTE_COLOR,
-        cols,
-    );
-
-    mesh.compute_normals();
+    sync_plane_with_heightmap(&mut mesh, &height_map, 0, (chunk_idx * CELL_SIZE) as i32);
 
     // Re-add collider to match new terrain
     commands.entity(e).remove::<Collider>();
