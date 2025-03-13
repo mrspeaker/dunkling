@@ -1,5 +1,6 @@
 mod game;
 pub mod camera;
+pub mod chunk;
 pub mod constants;
 pub mod height_map;
 pub mod player;

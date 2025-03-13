@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use noise::{NoiseFn, Perlin, Seedable};
+use noise::{NoiseFn, Perlin};
 use crate::constants::{MAX_TERRAIN_HEIGHT, CELL_SIZE};
 use rand::prelude::*;
 
