@@ -1,18 +1,18 @@
 use avian3d::prelude::*;
 use bevy::{
-    color::palettes::css::SILVER,
+    color::palettes::css::{SILVER, ORANGE},
     prelude::*,
     pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
 };
 
-use crate::constants::{
+use crate::{constants::{
     CELL_SIZE,
     CHUNK_SIZE,
     SHEET_TOTAL,
     NUM_CHUNKS,
     SCULPT_RAISE_POWER,
     SCULPT_LOWER_POWER, TARGET_CENTRE
-};
+}, stone::Stone};
 use crate::chunk::{SpawnChunk, sync_chunk_with_heightmap};
 use crate::game::{GameState, OnGameScreen};
 use crate::height_map::HeightMap;
@@ -30,6 +30,12 @@ pub struct TerrainSculpt {
 #[derive(Debug, Event)]
 pub struct TerrainCreated;
 
+#[derive(Debug, Event)]
+pub struct StoneInHole;
+
+#[derive(Component)]
+struct HoleSensor;
+
 pub fn sheet_plugin(app: &mut App) {
     app.add_plugins(WireframePlugin);
     app.insert_resource(WireframeConfig {
@@ -37,6 +43,7 @@ pub fn sheet_plugin(app: &mut App) {
         default_color: Color::linear_rgb(0.1,0.1, 0.),
     });
     app.add_systems(OnEnter(GameState::InGame), setup);
+    app.add_systems(Update, detect_collisions);
     app.add_observer(terrain_sculpt);
 }
 
@@ -124,6 +131,20 @@ fn setup(
             Transform::from_xyz(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE)
         ));
 
+    // Trigger inside hole
+    let hole = commands.spawn((
+        Mesh3d(meshes.add(Cylinder::default())),
+        MeshMaterial3d(materials.add(Color::from(ORANGE))),
+        Transform::from_translation(TARGET_CENTRE - (Vec3::Y * 40.0))
+            .with_scale(Vec3::new(50.0, 5.0, 50.0)),
+        OnGameScreen,
+        RigidBody::Static,
+        Collider::cylinder(0.5, 1.0),
+        Sensor,
+        HoleSensor
+    ));
+    dbg!(hole.id());
+
     // Endzone flag pole
     commands.spawn((
         Mesh3d(meshes.add(Cylinder::default())),
@@ -133,6 +154,32 @@ fn setup(
         OnGameScreen
     ));
 
+}
+
+fn detect_collisions(
+    mut collision_event_reader: EventReader<CollisionStarted>,
+    stone: Query<Entity, With<Stone>>,
+    hole: Query<Entity, (With<HoleSensor>, Without<Stone>)>,
+    mut commands: Commands
+) {
+    let Ok(stone) = stone.get_single() else { return; };
+    let Ok(hole) = hole.get_single() else { return; };
+
+    for CollisionStarted(e1, e2) in collision_event_reader.read() {
+        if *e1 == stone || *e2 == stone {
+            let in_hole = *e1 == hole || *e2 == hole;
+            if in_hole {
+                commands.trigger(StoneInHole);
+            }
+            println!(
+                "Entities {} and {} are colliding- {} {}",
+                e1,
+                e2,
+                hole,
+                in_hole
+            );
+        }
+    }
 }
 
 pub fn terrain_sculpt(

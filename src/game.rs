@@ -21,7 +21,7 @@ use crate::constants::{
 
 use crate::camera::camera_plugin;
 use crate::player::{player_plugin, HurlStone};
-use crate::sheet::sheet_plugin;
+use crate::sheet::{sheet_plugin, StoneInHole};
 use crate::splash::splash_plugin;
 use crate::stone::{Stone, stone_plugin};
 use crate::timey::Timey;
@@ -81,7 +81,7 @@ impl Plugin for GamePlugin {
         // Library plugins
         app.add_plugins((
             MeshPickingPlugin,
-            //PhysicsDebugPlugin::default(),
+            // PhysicsDebugPlugin::default(),
             PhysicsPlugins::default(),
             HanabiPlugin));
 
@@ -119,6 +119,7 @@ impl Plugin for GamePlugin {
         // Triggers
         app.add_observer(on_hurl_stone);
         app.add_observer(start_anims_on_load);
+        app.add_observer(on_stone_in_hole);
     }
 }
 
@@ -348,6 +349,13 @@ pub fn aim_countdown(
             game_state.set(GamePhase::Sculpting);
         }
     }
+}
+
+fn on_stone_in_hole (
+    _trigger: Trigger<StoneInHole>,
+    mut phase: ResMut<NextState<GamePhase>>,
+) {
+    phase.set(GamePhase::StoneStopped);
 }
 
 fn on_hurl_stone(

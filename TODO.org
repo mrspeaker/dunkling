@@ -30,3 +30,9 @@
 ** DONE Somehow slow down faster at end
 - added angulardamping (see constants)
 
+
+* Ideas / to test
+** "Floor is lava" mode
+... try to get in the hole without hitting the ground
+** Pinball-esque elements
+flippers and bouncers that you either want to hit or avoid
