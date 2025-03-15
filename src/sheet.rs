@@ -12,7 +12,7 @@ use crate::{constants::{
     NUM_CHUNKS,
     SCULPT_RAISE_POWER,
     SCULPT_LOWER_POWER, TARGET_CENTRE
-}, stone::Stone};
+}, stone::Stone, game::CollisionLayer};
 use crate::chunk::{SpawnChunk, sync_chunk_with_heightmap};
 use crate::game::{GameState, OnGameScreen};
 use crate::height_map::HeightMap;
@@ -127,7 +127,11 @@ fn setup(
                 asset_server
                     .load(GltfAssetLabel::Scene(0).from_asset("models/hole.glb"))),
             RigidBody::Static,
-            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh),
+            ColliderConstructorHierarchy::new(ColliderConstructor::TrimeshFromMesh)
+                .with_default_layers(CollisionLayers::new(
+                    [CollisionLayer::Terrain],
+                    [CollisionLayer::Stone]
+                )),
             Transform::from_xyz(0.0, 0.0, SHEET_TOTAL - CHUNK_SIZE)
         ));
 
@@ -140,8 +144,12 @@ fn setup(
         OnGameScreen,
         RigidBody::Static,
         Collider::cylinder(0.5, 1.0),
+        CollisionLayers::new(
+            [CollisionLayer::Sensors],
+            [CollisionLayer::Stone]
+        ),
         Sensor,
-        HoleSensor
+        HoleSensor,
     ));
     dbg!(hole.id());
 

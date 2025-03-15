@@ -4,7 +4,7 @@ use bevy::{
     render::mesh::VertexAttributeValues
 };
 
-use crate::game::OnGameScreen;
+use crate::game::{OnGameScreen, CollisionLayer};
 use crate::height_map::HeightMap;
 use crate::sheet::Sheet;
 use crate::constants::{
@@ -46,12 +46,17 @@ impl Command for SpawnChunk {
 
         // Mesh chunk
         let mut ent = world.spawn((
+            Name::new("Chunk"),
             OnGameScreen,
             Mesh3d(mesh),
             RigidBody::Static,
             Friction::new(1.0),
             ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
-            CollisionMargin(0.05),
+            //CollisionMargin(0.05),
+            CollisionLayers::new(
+                [CollisionLayer::Terrain],
+                [CollisionLayer::Stone]
+            ),
             MeshMaterial3d(mat.clone()),
             Transform::from_xyz(
                 self.pos.x as f32 * CHUNK_SIZE,

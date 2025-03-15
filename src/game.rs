@@ -72,6 +72,16 @@ pub struct HiScore {
     pub fault: bool
 }
 
+#[derive(PhysicsLayer, Default)]
+pub enum CollisionLayer {
+    #[default]
+    Default,
+    Terrain,
+    Stone,
+    Townsfolk,
+    Sensors
+}
+
 fn distance_to_target(pos: Vec3) -> f32 {
     pos.distance(TARGET_CENTRE)
 }
@@ -291,16 +301,16 @@ fn setup(
         .update(update_accel)
         .render(ColorOverLifetimeModifier { gradient });
 
-    let _effect_handle = effects.add(effect);
-   /* commands
+    let effect_handle = effects.add(effect);
+    commands
         .spawn((
             ParticleEffectBundle {
                 effect: ParticleEffect::new(effect_handle),
-                transform: Transform::from_xyz(STONE_X, STONE_Y, STONE_Z + 500.),
+                transform: Transform::from_xyz(0.0, 50.0, 500.0),
                 ..Default::default()
             },
-    OnGameScreen));
-    */
+            OnGameScreen));
+
 
 }
 

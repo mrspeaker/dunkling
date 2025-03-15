@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use avian3d::prelude::*;
 
-use crate::game::{GameState, OnGameScreen, Spotty};
+use crate::game::{GameState, OnGameScreen, Spotty, CollisionLayer};
 
 use crate::constants::{
     CHUNK_SIZE,
@@ -42,6 +42,10 @@ fn setup(
         OnGameScreen,
         //RigidBody::Dynamic, // Gets added when you fire
         Collider::sphere(STONE_RADIUS),
+        CollisionLayers::new(
+            [CollisionLayer::Stone],
+            [CollisionLayer::Terrain, CollisionLayer::Sensors]
+        ),
         LinearDamping(STONE_DAMPENING),
         AngularDamping(STONE_ANGULAR_DAMPENING),
         MaxLinearSpeed(STONE_MAX_VEL),
@@ -53,7 +57,7 @@ fn setup(
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS))),
         MeshMaterial3d(material_handle),
         Transform::from_xyz(STONE_X, STONE_Y, STONE_Z),
-        TransformInterpolation // smooths the movement
+        TransformInterpolation, // smooths the movement
     ));
 }
 
