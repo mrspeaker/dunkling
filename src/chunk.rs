@@ -82,6 +82,12 @@ impl Command for SpawnChunk {
             .add(Color::BLACK);
 
         // Stop from falling through ground
+        // NOTE: previously this was to stop the stone going underground when
+        // terrain shaping (and the collider was re-built, seemed like a "just in that frame"
+        // kind of bug... but when I changed to collisionlayers I forgot to
+        // add the underground: yet all the time it never went through.
+        // So now is just because teh seems of chunks aren't joined. Might not
+        // need this anymore.
         world.spawn((
             OnGameScreen,
             RigidBody::Static,
@@ -93,6 +99,10 @@ impl Command for SpawnChunk {
                 y_length: 50.0,
                 z_length: CHUNK_SIZE
             },
+            CollisionLayers::new(
+                [CollisionLayer::Terrain],
+                [CollisionLayer::Stone] //, CollisionLayer::Townsfolk]
+            ),
             Transform::from_xyz(
                 self.pos.x as f32 * CHUNK_SIZE,
                 -25.05,

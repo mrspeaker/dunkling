@@ -36,13 +36,20 @@
 ... try to get in the hole without hitting the ground
 ** Pinball-esque elements
 flippers and bouncers that you either want to hit or avoid
-** Roulette table
+** Roulette/Craps table
 (Inspo: thor leaning over the side of the playing field looked like someone standing around a craps table, cheering the throw)
 
-How about a gambling-type game, the play field city is divided up into city "zones" that also funciton as roulette-type results (like the "evens" "odds", "black/red", "1to12"etc). Where the stone stops becomes the result of the roll.
+How about a gambling-type game, the play field city is divided up into city "zones" that also funciton as roulette or craps-type results (like the "evens" "odds", "black/red", "1to12"etc). Where the stone stops becomes the result of the roll. I don't konw how craps works, but I think this woul be the game to model it on: there's a strong "social interaction" part of that game (aparently)
 
 That makes it "multiplayer" and maybe "twitch game-able"...
 
 Perhaps player's bets are physical tokens in the play field (like, houses) and can be hit and moved by the stone.
 
-- Ring around the hole is "the house" lol.
+- Ring closest to the hole is "the house" lol. Everyon lose.
+
+- Don't use craps/roulette terminology- make up new ones. People love being in on secret languages (same as in horse racing) - everything should have a "come-in spinner", "come out roll"... and every outcome (eg "Big Red" == 7). "Stick calls are the phrases that the stickman, the casino staff member responsible for handling the dice, uses to announce the outcome of a roll in craps. eg “Eight, Skate and Donate!”: A fun way to announce an eight. "
+  --- here's why someone on reddit likes craps: "The ability to control the pace of winning and losing. I can play a line bet, no odds. Or, I can play the line with odds, and fill up on (don't) come bets with odds. And, hop the easy ways or hi-lo-yo." 
+
+  
+
+  

@@ -78,12 +78,13 @@ pub fn spawn_townsfolk(
     );
 
     // Add the things
+    // TODO: a bunch just fall through the ground. fixer it.
     for _ in 0..200 {
         let (x, z) = height_map.get_random_pos_between_height(0.1, 1.5);
         //let x = rng.gen_range(0.0..w); // right(0) to left (w)
         //let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0) + 1.0;
-        let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
+        let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE);
         let rot = 0.0; // rng.gen_range(0.0..PI * 2.0);
 
         let thing = things.choose(&mut rng).unwrap();

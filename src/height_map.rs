@@ -114,9 +114,6 @@ impl HeightMap {
             let cell = self.get_random_cell();
             let h = self.map[cell.1][cell.0];
             if h >= min_h && h <= max_h {
-                if i > 1 {
-                    info!("Mo {}", i);
-                }
                 return (cell.0 as f32 * self.rat_w, cell.1 as f32 * self.rat_h)
             }
             i += 1;
