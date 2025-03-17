@@ -156,19 +156,37 @@ fn setup(
         unlit: true,
         ..default()
     });
-    commands.spawn((
-        Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width * aspect))),
-        MeshMaterial3d(material_handle),
-        Transform::from_xyz(200.0, 1.0, 2000.0)
-            .with_rotation(Quat::from_euler(
-                // YXZ = "yaw"/"pitch"/"roll"
-                EulerRot::YXZ,
-                (180.0_f32).to_radians(),
-                (0.0_f32).to_radians(),
-                (0.0_f32).to_radians(),
-            )),
-        OnGameScreen
-    ));
+
+    for i in 0 .. 3 {
+        commands.spawn((
+            Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width * aspect))),
+            MeshMaterial3d(material_handle.clone()),
+            Transform::from_xyz(200.0, 20.0, (i + 2) as f32 * 1000.0)
+                .with_rotation(Quat::from_euler(
+                    // YXZ = "yaw"/"pitch"/"roll"
+                    EulerRot::YXZ,
+                    (180.0_f32).to_radians(),
+                    (0.0_f32).to_radians(),
+                    (0.0_f32).to_radians(),
+                )),
+            OnGameScreen
+        ));
+    }
+    for i in 0 .. 3 {
+        commands.spawn((
+            Mesh3d(meshes.add(Rectangle::new(quad_width, quad_width * aspect))),
+            MeshMaterial3d(material_handle.clone()),
+            Transform::from_xyz(-200.0, 20.0, (i + 1) as f32 * 800.0)
+                .with_rotation(Quat::from_euler(
+                    // YXZ = "yaw"/"pitch"/"roll"
+                    EulerRot::YXZ,
+                    (0.0_f32).to_radians(),
+                    (0.0_f32).to_radians(),
+                    (0.0_f32).to_radians(),
+                )),
+            OnGameScreen
+        ));
+    }
 
 
     // Spot light

@@ -36,3 +36,13 @@
 ... try to get in the hole without hitting the ground
 ** Pinball-esque elements
 flippers and bouncers that you either want to hit or avoid
+** Roulette table
+(Inspo: thor leaning over the side of the playing field looked like someone standing around a craps table, cheering the throw)
+
+How about a gambling-type game, the play field city is divided up into city "zones" that also funciton as roulette-type results (like the "evens" "odds", "black/red", "1to12"etc). Where the stone stops becomes the result of the roll.
+
+That makes it "multiplayer" and maybe "twitch game-able"...
+
+Perhaps player's bets are physical tokens in the play field (like, houses) and can be hit and moved by the stone.
+
+- Ring around the hole is "the house" lol.

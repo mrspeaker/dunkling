@@ -20,7 +20,7 @@ use crate::constants::{
     MIN_SCULT_DIST_FROM_STONE,
     STONE_RADIUS,
     SHEET_PRE_AREA,
-    STONE_HURL_POWERUP_TIME,
+    STONE_HURL_POWERUP_TIME, STONE_Y,
 };
 
 const INIT_PBALL_X:f32 = STONE_RADIUS * 10.0;
@@ -84,7 +84,7 @@ fn setup_aim(
         AngularVelocity(Vec3::new( 10.0, 0.0, 0.0)),
         Mesh3d(meshes.add(Sphere::new(STONE_RADIUS*0.5))),
         MeshMaterial3d(materials.add(Color::srgb_u8(124, 144, 255))),
-        Transform::from_xyz(INIT_PBALL_X, STONE_RADIUS * 9.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
+        Transform::from_xyz(INIT_PBALL_X, STONE_Y + 30.0, -CHUNK_SIZE + SHEET_PRE_AREA * 2.0),
     ));
 }
 
