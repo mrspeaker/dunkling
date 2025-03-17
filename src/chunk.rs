@@ -52,10 +52,10 @@ impl Command for SpawnChunk {
             RigidBody::Static,
             Friction::new(1.0),
             ColliderConstructor::TrimeshFromMeshWithConfig(TrimeshFlags::FIX_INTERNAL_EDGES),
-            //CollisionMargin(0.05),
+            //CollisionMargin(0.01),
             CollisionLayers::new(
                 [CollisionLayer::Terrain],
-                [CollisionLayer::Stone]
+                [CollisionLayer::Stone, CollisionLayer::Townsfolk]
             ),
             MeshMaterial3d(mat.clone()),
             Transform::from_xyz(

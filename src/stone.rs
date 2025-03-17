@@ -42,9 +42,10 @@ fn setup(
         OnGameScreen,
         //RigidBody::Dynamic, // Gets added when you fire
         Collider::sphere(STONE_RADIUS),
+        ColliderDensity(10.0),
         CollisionLayers::new(
             [CollisionLayer::Stone],
-            [CollisionLayer::Terrain, CollisionLayer::Sensors]
+            [CollisionLayer::Terrain, CollisionLayer::Sensors, CollisionLayer::Townsfolk]
         ),
         LinearDamping(STONE_DAMPENING),
         AngularDamping(STONE_ANGULAR_DAMPENING),

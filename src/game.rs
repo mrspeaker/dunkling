@@ -290,7 +290,7 @@ fn setup(
     let accel = module.lit(Vec3::new(0., -20., 0.));
     let update_accel = AccelModifier::new(accel);
     let effect = EffectAsset::new(
-        32768,
+        2008,
         Spawner::rate(50.0.into()),
         module
     )

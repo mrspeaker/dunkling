@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use avian3d::prelude::{RigidBody, Collider};
+use avian3d::prelude::{RigidBody, Collider, CollisionLayers};
 use bevy::prelude::*;
 
 use rand::prelude::*;
@@ -10,7 +10,7 @@ use crate::constants::{
     CHUNK_SIZE,
 };
 
-use crate::game::{GameState, OnGameScreen};
+use crate::game::{GameState, OnGameScreen, CollisionLayer};
 use crate::height_map::HeightMap;
 use crate::sheet::TerrainCreated;
 
@@ -59,30 +59,39 @@ pub fn spawn_townsfolk(
     }
 
     // Add the things
-    for i in 0..200 {
-
+    for _ in 0..200 {
         let (x, z) = height_map.get_random_pos_between_height(0.1, 1.0);
         //let x = rng.gen_range(0.0..w); // right(0) to left (w)
         //let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
-        let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
+        let y = height_map.pos_to_height(x, z).unwrap_or(0.0) + 1.0;
         let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
-        let rot = 0.0;//rng.gen_range(0.0..PI*2.0);
+        let rot = 0.0; //rng.gen_range(0.0..PI*2.0);
 
         // Some buildings. TODO: put them somehwere else
+        let things = vec!(
+            ("models/shop.glb", Vec3::splat(7.0), Vec3::new(0.0, 3.5, 0.0)),
+            ("models/house.glb", Vec3::new(8.0, 5.5, 6.0), Vec3::new(4.0, 2.75, 3.0)),
+            ("models/cab.glb", Vec3::new(5.0, 1.5, 2.0), Vec3::new(2.5, 0.75, 1.0))
+        );
+        let thing = things.choose(&mut rng).unwrap();
+
         commands
             .spawn((
                 Name::new("House"),
                 OnGameScreen,
                 SceneRoot(
                     asset_server
-                        .load(GltfAssetLabel::Scene(0).from_asset(
-                            if i % 3 == 0 {
-                                "models/cab.glb"
-                            } else if i % 3 == 1 {
-                                "models/shop.glb"
-                            } else {"models/house.glb"}
-                        ))),
-                Transform::from_xyz(pos.x, pos.y, pos.z).with_rotation(Quat::from_rotation_y(rot))
+                        .load(GltfAssetLabel::Scene(0).from_asset(thing.0))),
+                Transform::from_translation(pos).with_rotation(Quat::from_rotation_y(rot)),
+                RigidBody::Dynamic,
+            ))
+            .with_child((
+                Collider::cuboid(thing.1.x, thing.1.y, thing.1.z),
+                CollisionLayers::new(
+                    [CollisionLayer::Townsfolk],
+                    [CollisionLayer::Stone, CollisionLayer::Terrain]
+                ),
+                Transform::from_translation(thing.2)
             ));
     }
 
