@@ -20,9 +20,6 @@ impl HeightMap {
         let rat_h = h / cell_h as f32;
         let map = vec![vec![0.0; cell_w]; cell_h];
 
-        let mut rng = rand::thread_rng();
-        let mut noise = Perlin::new(rng.next_u32());
-
         let mut hm = HeightMap {
             w,
             h,
@@ -32,12 +29,13 @@ impl HeightMap {
             rat_h,
             map,
         };
-        hm.terraform(&mut noise);
+        hm.terraform();
         hm
     }
 
-    pub fn terraform(&mut self, noise: &mut Perlin) {
-
+    pub fn terraform(&mut self) {
+        let mut rng = rand::thread_rng();
+        let noise = Perlin::new(rng.next_u32());
         let noise_size = 0.0005;
 
         for y in 0..self.cell_h {
