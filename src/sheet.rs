@@ -136,7 +136,7 @@ fn setup(
         ));
 
     // Trigger inside hole
-    let hole = commands.spawn((
+    let _hole = commands.spawn((
         Mesh3d(meshes.add(Cylinder::default())),
         MeshMaterial3d(materials.add(Color::from(ORANGE))),
         Transform::from_translation(TARGET_CENTRE - (Vec3::Y * 40.0))
@@ -151,7 +151,6 @@ fn setup(
         Sensor,
         HoleSensor,
     ));
-    dbg!(hole.id());
 
     // Endzone flag pole
     commands.spawn((
@@ -159,8 +158,28 @@ fn setup(
         MeshMaterial3d(materials.add(Color::from(SILVER))),
         Transform::from_translation(TARGET_CENTRE)
             .with_scale(Vec3::new(5.0, 200.0, 5.0)),
-        OnGameScreen
+        OnGameScreen,
+        RigidBody::Static,
+        Collider::cylinder(0.5, 1.0),
+        CollisionLayers::new(
+            [CollisionLayer::Terrain],
+            [CollisionLayer::Stone]
+        ),
+
     ));
+
+    commands
+        .spawn((
+            Name::new("Mountain"),
+            OnGameScreen,
+            SceneRoot(
+                asset_server
+                    .load(GltfAssetLabel::Scene(0).from_asset("models/mountain.glb"))),
+            Transform::from_xyz(0.0, 0.0, -400.0).with_scale(Vec3::splat(200.0))
+        ));
+
+
+
 
 }
 

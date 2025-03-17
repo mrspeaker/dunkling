@@ -33,13 +33,13 @@ fn setup(
             button_orbit: MouseButton::Middle,
             pan_sensitivity: 0.0, // disable panning
             zoom_lower_limit: 100.0,
-            zoom_upper_limit: Some(500.0),
+            zoom_upper_limit: Some(1000.0),
             ..default()
         }
     ));
 
     commands.insert_resource(AtmosphereSettings {
-        skybox_creation_mode: SkyboxCreationMode::FromSpecifiedFar(8000.0),
+        skybox_creation_mode: SkyboxCreationMode::FromSpecifiedFar(10000.0),
         ..default()
     });
 }

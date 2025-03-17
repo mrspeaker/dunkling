@@ -36,23 +36,32 @@ impl HeightMap {
     pub fn terraform(&mut self) {
         let mut rng = rand::thread_rng();
         let noise = Perlin::new(rng.next_u32());
-        let noise_size = 0.0005;
+        let main_size = 0.01;
+        let bump_size = 0.2;
 
         for y in 0..self.cell_h {
             for x in 0..self.cell_w {
                 let noise_val  = noise.get([
-                    (x as f64 * noise_size * 20.0),
-                    (y as f64 * noise_size * 20.0),
+                    x as f64 * main_size,
+                    y as f64 * main_size,
+                    0.0,
+                ]);
+                let bump_val  = noise.get([
+                    x as f64 * bump_size,
+                    y as f64 * bump_size,
                     0.0,
                 ]) * 0.5;
 
                 let noise_height = noise_val.max(0.0) as f32 * MAX_TERRAIN_HEIGHT;
+                let bump_height = (bump_val * 2.5) as f32;
 
                 // Make "halfpipe"
                 let px =  ((x as f32 / self.cell_w as f32) - 0.5) * 2.0;
                 let halfpipe = px.powf(12.0) * 50.0;
 
-                let height = noise_height  + halfpipe;
+                let height = noise_height + halfpipe;
+
+                let bump_ratio = (1.0 - (height / (MAX_TERRAIN_HEIGHT * 0.2))).max(0.0);
 
                 // Increase slope along sheet z.
                 // - Starts flat, goes bumpy, ends flat.
@@ -61,7 +70,7 @@ impl HeightMap {
                 let curve = 1.0 - ((z_percent / 0.48) - 1.0).powf(4.0);
                 let slope = curve.max(0.0); // Clip floor
 
-                self.map[y][x] = height * slope;
+                self.map[y][x] = ((height * slope) + (bump_height * bump_ratio)).max(0.0);
             }
         }
 
@@ -100,14 +109,23 @@ impl HeightMap {
     }
 
     pub fn get_random_pos_between_height(&self, min_h: f32, max_h: f32) -> (f32, f32) {
+        let mut i = 0;
         loop {
             let cell = self.get_random_cell();
             let h = self.map[cell.1][cell.0];
             if h >= min_h && h <= max_h {
+                if i > 1 {
+                    info!("Mo {}", i);
+                }
                 return (cell.0 as f32 * self.rat_w, cell.1 as f32 * self.rat_h)
+            }
+            i += 1;
+            if i > 100 {
+                return (0.0, 0.0);
             }
         }
     }
+
 
     pub fn add_height(&mut self, hm_x: usize, hm_y: usize, value: f32, chunk_idx: usize) {
         if hm_x >= self.cell_w ||

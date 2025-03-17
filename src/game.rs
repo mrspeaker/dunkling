@@ -16,7 +16,7 @@ use crate::constants::{
     TARGET_CENTRE,
     STONE_ANGULAR_DAMPENING_INC_START_AT,
     STONE_ANGULAR_DAMPENING_INC_AMOUNT,
-    STONE_HURL_AIM_ANGLE_MULTIPLIER, STONE_MAX_VEL, SHOW_DBG
+    STONE_HURL_AIM_ANGLE_MULTIPLIER, STONE_MAX_VEL, SHOW_DBG, STONE_Y
 };
 
 use crate::camera::camera_plugin;
@@ -264,7 +264,7 @@ fn setup(
             SceneRoot(
                 asset_server
                     .load(GltfAssetLabel::Scene(0).from_asset(BIG_THOR_PATH))),
-            Transform::from_xyz(0.0, 92.0, -CHUNK_SIZE + SHEET_PRE_AREA)
+            Transform::from_xyz(0.0, STONE_Y - 55.0, -CHUNK_SIZE + SHEET_PRE_AREA)
                 .with_scale(Vec3::splat(25.0))
         ));
 

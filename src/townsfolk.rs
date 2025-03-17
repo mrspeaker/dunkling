@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use avian3d::prelude::{RigidBody, Collider, CollisionLayers};
+use avian3d::prelude::{RigidBody, Collider, CollisionLayers, MaxLinearSpeed, MaxAngularSpeed};
 use bevy::prelude::*;
 
 use rand::prelude::*;
@@ -22,6 +22,16 @@ struct Target(Option<Vec2>);
 
 #[derive(Component)]
 struct Speed(f32);
+
+enum TownsfolkType {
+    Person,
+    House,
+    Shop,
+    Cab
+}
+
+#[derive(Component)]
+struct TownsfolkElement(TownsfolkType);
 
 pub fn townsfolk_plugin(app: &mut App) {
     app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
@@ -55,24 +65,27 @@ pub fn spawn_townsfolk(
                         .load(GltfAssetLabel::Scene(0).from_asset("models/person.glb"))),
                 Target(None),
                 Speed(0.0),
+                MaxLinearSpeed(400.0),
+                MaxAngularSpeed(20.0),
                 Transform::from_xyz(pos.x, pos.y, pos.z)));
     }
 
+    // Some buildings. TODO: put them somehwere else
+    let things = vec!(
+        ("models/shop.glb", Vec3::splat(7.0), Vec3::new(0.0, 3.5, 0.0)),
+        ("models/house.glb", Vec3::new(8.0, 5.5, 6.0), Vec3::new(4.0, 2.75, 3.0)),
+        ("models/cab.glb", Vec3::new(5.0, 2.5, 2.0), Vec3::new(2.5, 0.75, 1.0))
+    );
+
     // Add the things
     for _ in 0..200 {
-        let (x, z) = height_map.get_random_pos_between_height(0.1, 1.0);
+        let (x, z) = height_map.get_random_pos_between_height(0.1, 1.5);
         //let x = rng.gen_range(0.0..w); // right(0) to left (w)
         //let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0) + 1.0;
         let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
-        let rot = 0.0; //rng.gen_range(0.0..PI*2.0);
+        let rot = 0.0; // rng.gen_range(0.0..PI * 2.0);
 
-        // Some buildings. TODO: put them somehwere else
-        let things = vec!(
-            ("models/shop.glb", Vec3::splat(7.0), Vec3::new(0.0, 3.5, 0.0)),
-            ("models/house.glb", Vec3::new(8.0, 5.5, 6.0), Vec3::new(4.0, 2.75, 3.0)),
-            ("models/cab.glb", Vec3::new(5.0, 1.5, 2.0), Vec3::new(2.5, 0.75, 1.0))
-        );
         let thing = things.choose(&mut rng).unwrap();
 
         commands
