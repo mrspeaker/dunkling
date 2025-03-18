@@ -36,7 +36,7 @@
 ... try to get in the hole without hitting the ground
 ** Pinball-esque elements
 flippers and bouncers that you either want to hit or avoid
-** Roulette/Craps table
+** Roulette/Craps table 
 (Inspo: thor leaning over the side of the playing field looked like someone standing around a craps table, cheering the throw)
 
 How about a gambling-type game, the play field city is divided up into city "zones" that also funciton as roulette or craps-type results (like the "evens" "odds", "black/red", "1to12"etc). Where the stone stops becomes the result of the roll. I don't konw how craps works, but I think this woul be the game to model it on: there's a strong "social interaction" part of that game (aparently)
