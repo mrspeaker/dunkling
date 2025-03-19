@@ -124,9 +124,17 @@ pub fn spawn_townsfolk(
                 SceneRoot(
                     asset_server
                         .load(GltfAssetLabel::Scene(0).from_asset("models/tree.glb"))),
-                RigidBody::Static,
-                Collider::cuboid(1.0, 1.0, 1.7),
-                Transform::from_xyz(pos.x, pos.y, pos.z)));
+                RigidBody::Dynamic,
+                Transform::from_xyz(pos.x, pos.y, pos.z)))
+            .with_child((
+                Collider::cuboid(4.5, 6.0, 4.5),
+                CollisionLayers::new(
+                    [CollisionLayer::Townsfolk],
+                    [CollisionLayer::Stone, CollisionLayer::Terrain]
+                ),
+                Transform::from_translation(Vec3::Y * 3.0)
+            ));
+
     }
 }
 
