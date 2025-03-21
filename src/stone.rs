@@ -45,7 +45,11 @@ fn setup(
         ColliderDensity(10.0),
         CollisionLayers::new(
             [CollisionLayer::Stone],
-            [CollisionLayer::Terrain, CollisionLayer::Sensors, CollisionLayer::Townsfolk]
+            [
+                CollisionLayer::Terrain,
+                CollisionLayer::Sensors,
+                CollisionLayer::Townsfolk
+            ]
         ),
         LinearDamping(STONE_DAMPENING),
         AngularDamping(STONE_ANGULAR_DAMPENING),

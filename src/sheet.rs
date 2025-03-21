@@ -197,14 +197,14 @@ fn detect_collisions(
             let in_hole = *e1 == hole || *e2 == hole;
             if in_hole {
                 commands.trigger(StoneInHole);
+                println!(
+                    "Entities {} and {} are colliding- {} {}",
+                    e1,
+                    e2,
+                    hole,
+                    in_hole
+                );
             }
-            println!(
-                "Entities {} and {} are colliding- {} {}",
-                e1,
-                e2,
-                hole,
-                in_hole
-            );
         }
     }
 }

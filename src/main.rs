@@ -4,6 +4,7 @@ pub mod chunk;
 pub mod constants;
 pub mod height_map;
 pub mod player;
+pub mod powerups;
 pub mod sheet;
 pub mod splash;
 pub mod stone;

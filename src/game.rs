@@ -21,6 +21,7 @@ use crate::constants::{
 
 use crate::camera::camera_plugin;
 use crate::player::{player_plugin, HurlStone};
+use crate::powerups::powerups_plugin;
 use crate::sheet::{sheet_plugin, StoneInHole};
 use crate::splash::splash_plugin;
 use crate::stone::{Stone, stone_plugin};
@@ -99,6 +100,7 @@ impl Plugin for GamePlugin {
         app.add_plugins((
             camera_plugin,
             player_plugin,
+            powerups_plugin,
             sheet_plugin,
             splash_plugin,
             stone_plugin,
