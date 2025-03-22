@@ -101,7 +101,7 @@ impl Command for SpawnChunk {
             },
             CollisionLayers::new(
                 [CollisionLayer::Terrain],
-                [CollisionLayer::Stone] //, CollisionLayer::Townsfolk]
+                [CollisionLayer::Stone, CollisionLayer::Townsfolk]
             ),
             Transform::from_xyz(
                 self.pos.x as f32 * CHUNK_SIZE,
