@@ -236,7 +236,7 @@ pub fn terrain_sculpt(
 
     // change the heights of surrounding verts
     let amount = 0.8;
-    for n in get_neighbours_radius(c1x, c1y, 4) {
+    for n in get_neighbours_radius(c1x, c1y, 4, 4) {
         let dist = 1.0 - (1.0 - n.2).powi(3);// n.2 * n.2; // 0 - 1
         height_map.add_height(n.0, n.1, h * amount * dist, chunk_idx);
     }
@@ -266,13 +266,13 @@ pub fn terrain_sculpt(
 ///
 /// A Vector of tuples where each element is a tuple containing the x, y indices of a cell and its normalized distance from the reference point.
 ///
-pub fn get_neighbours_radius(x: usize, y: usize, r: usize) -> Vec<(usize, usize, f32)> {
+pub fn get_neighbours_radius(x: usize, y: usize, r: usize, fwd: usize) -> Vec<(usize, usize, f32)> {
     let mut ns: Vec<(usize,usize,f32)> = vec![];
     let max_dist = ((r as f32 * r as f32) + (r as f32 * r as f32)).sqrt();
-    for j in y.saturating_sub(r)..=y.saturating_add(r) {
+    for j in y.saturating_sub(r* fwd)..=y.saturating_add(r) {
         for i in x.saturating_sub(r)..=x.saturating_add(r) {
             let dist = ((i as f32 - x as f32).powi(2) + (j as f32 - y as f32).powi(2)).sqrt();
-            ns.push((i, j, 1.0 - (dist / max_dist)));
+            ns.push((i, j, 1.0 - (dist / max_dist).min(1.0)));
         }
     }
     ns
