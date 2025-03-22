@@ -1,15 +1,12 @@
-use std::f32::consts::PI;
-
 use avian3d::prelude::{RigidBody, Collider, CollisionLayers, MaxLinearSpeed, MaxAngularSpeed};
 use bevy::prelude::*;
-
 use rand::prelude::*;
+
 
 use crate::constants::{
     SHEET_TOTAL,
     CHUNK_SIZE,
 };
-
 use crate::game::{GameState, OnGameScreen, CollisionLayer};
 use crate::height_map::HeightMap;
 use crate::sheet::TerrainCreated;
@@ -23,16 +20,6 @@ struct Target(Option<Vec2>);
 #[derive(Component)]
 struct Speed(f32);
 
-enum TownsfolkType {
-    Person,
-    House,
-    Shop,
-    Cab
-}
-
-#[derive(Component)]
-struct TownsfolkElement(TownsfolkType);
-
 pub fn townsfolk_plugin(app: &mut App) {
     app.add_systems(Update, move_peeps.run_if(in_state(GameState::InGame)));
     app.add_observer(spawn_townsfolk);
@@ -45,13 +32,13 @@ pub fn spawn_townsfolk(
     height_map: Res<HeightMap>
 ) {
     // get height_map
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let w = CHUNK_SIZE;
 
     // Add the people
     for _ in 0..200 {
-        let x = rng.gen_range(0.0..w); // right(0) to left (w)
-        let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
+        let x = rng.random_range(0.0..w); // right(0) to left (w)
+        let z = rng.random_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
         let pos = Vec3::new(x - w / 2.0, y, z - CHUNK_SIZE / 2.0);
 
@@ -108,10 +95,9 @@ pub fn spawn_townsfolk(
     }
 
     // Add some trees
-    let mut rng = rand::thread_rng();
     for _ in 0..100 {
-        let x = rng.gen_range(0.0..w); // right(0) to left (w)
-        let z = rng.gen_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
+        let x = rng.random_range(0.0..w); // right(0) to left (w)
+        let z = rng.random_range(0.0..SHEET_TOTAL - CHUNK_SIZE * 2.0);
         let y = height_map.pos_to_height(x, z).unwrap_or(0.0);
         let pos = Vec3::new(x - w / 2.0, y, z - w / 2.0);
 
@@ -146,11 +132,11 @@ fn move_peeps(
     for (mut t, mut target, mut speed) in peeps.iter_mut() {
         let pos = t.translation;
         if target.0.is_none() {
-            let mut rng = rand::thread_rng();
-            let x = rng.gen_range(-10.0..10.0);
-            let z = rng.gen_range(-10.0..10.0);
+            let mut rng = rand::rng();
+            let x = rng.random_range(-10.0..10.0);
+            let z = rng.random_range(-10.0..10.0);
             target.0 = Some(Vec2::new(pos.x + x, pos.z + z));
-            speed.0 = rng.gen_range(1.0..5.0);
+            speed.0 = rng.random_range(1.0..5.0);
         }
 
         // Move towards target

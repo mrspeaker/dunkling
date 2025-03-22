@@ -2,7 +2,7 @@ use avian3d::prelude::*;
 use bevy::{
     color::palettes::css::{SILVER, ORANGE},
     prelude::*,
-    pbr::wireframe::{Wireframe, WireframeConfig, WireframePlugin},
+    pbr::wireframe::{WireframeConfig, WireframePlugin},
 };
 
 use crate::{constants::{

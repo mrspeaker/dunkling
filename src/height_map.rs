@@ -34,7 +34,7 @@ impl HeightMap {
     }
 
     pub fn terraform(&mut self) {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let noise = Perlin::new(rng.next_u32());
         let main_size = 0.01;
         let bump_size = 0.2;
@@ -102,9 +102,9 @@ impl HeightMap {
 
     // Return a random cell x/y from the height map
     pub fn get_random_cell(&self) -> (usize, usize) {
-        let mut rng = rand::thread_rng();
-        let cell_x = rng.gen_range(0..self.cell_w);
-        let cell_y = rng.gen_range(0..self.cell_h);
+        let mut rng = rand::rng();
+        let cell_x = rng.random_range(0..self.cell_w);
+        let cell_y = rng.random_range(0..self.cell_h);
         (cell_x, cell_y)
     }
 
